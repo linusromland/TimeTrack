@@ -3,7 +3,7 @@ package calendar
 import (
 	"TimeTrack/src/oauth"
 	"context"
-	"log"
+	"fmt"
 
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -14,7 +14,7 @@ func GetCalendarService() *calendar.Service {
 	ctx := context.Background()
 	service, err := calendar.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve calendar Client %v", err)
+		fmt.Printf("Unable to retrieve calendar Client %v", err)
 	}
 	return service
 }

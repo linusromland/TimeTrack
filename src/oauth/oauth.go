@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -51,7 +50,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	fmt.Printf("Opening URL in your browser: %s\n", authURL)
 	err := openURL(authURL)
 	if err != nil {
-		log.Fatalf("Failed to open URL in browser: %v", err)
+		fmt.Printf("failed to open URL in browser: %v", err)
 	}
 
 	// Wait for the callback to return the authorization code
@@ -60,7 +59,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	// Use the authorization code to get the access token
 	token, err = config.Exchange(context.TODO(), authCode)
 	if err != nil {
-		log.Fatalf("Failed to exchange auth code for token: %v", err)
+		fmt.Printf("failed to exchange auth code for token: %v", err)
 	}
 
 	return token
@@ -70,7 +69,7 @@ func saveToken(file string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		log.Fatalf("Unable to cache oauth token: %v", err)
+		fmt.Printf("unable to cache oauth token: %v", err)
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
