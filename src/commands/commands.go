@@ -8,4 +8,5 @@ var AllCommands = []*cli.Command{
 	StartCommand,
 	EndCommand,
 	AbortCommand,
+	ListCommand,
 }

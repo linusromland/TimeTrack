@@ -1,6 +1,8 @@
 package utils
 
-import "time"
+import (
+	"time"
+)
 
 func GetTaskTime(start time.Time, end time.Time) (hours int, minutes int) {
 	startHour := start.Hour()
