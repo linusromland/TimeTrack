@@ -12,7 +12,7 @@ TimeTrack is a Command Line Interface (CLI) application designed for efficient t
 
 ## Installation
 
-macOS:
+### macOS:
 
 Open your terminal.
 
@@ -22,7 +22,7 @@ Run the following command to download and install TimeTrack:
 curl -sSL https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.sh | bash
 ```
 
-Windows:
+### Windows:
 
 For users with PowerShell (Windows 10 and newer):
 
@@ -34,7 +34,7 @@ For users with PowerShell (Windows 10 and newer):
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.bat" -OutFile "install.bat"; .\install.bat
 ```
 
-Linux:
+### Linux:
 
 For Linux users, manual installation is required:
 
