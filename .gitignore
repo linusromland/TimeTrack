@@ -21,7 +21,13 @@
 go.work
 
 # Environment variables file
-.env
+.env*
+!.env.example
 
 # Credentials file
 token.json
+
+dist/
+
+# MacOS directory attributes
+.DS_Store

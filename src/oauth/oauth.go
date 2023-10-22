@@ -16,8 +16,26 @@ import (
 )
 
 var (
-	tokenFile = filepath.Join("token.json")
+	PRODUCTION_CLIENT_ID     string
+	PRODUCTION_CLIENT_SECRET string
+	tokenDir                 = filepath.Join(userConfigDir(), "TimeTrack")
+	tokenFile                = filepath.Join(tokenDir, "token.json")
 )
+
+func userConfigDir() string {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		fmt.Printf("failed to get user config dir: %v", err)
+		return ""
+	}
+	return dir
+}
+
+func ensureTokenDirExists() {
+	if _, err := os.Stat(tokenDir); os.IsNotExist(err) {
+		os.MkdirAll(tokenDir, 0700)
+	}
+}
 
 func GetClient() *http.Client {
 	var config = getOAuthConfig()
@@ -66,6 +84,7 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 }
 
 func saveToken(file string, token *oauth2.Token) {
+	ensureTokenDirExists()
 	fmt.Printf("Saving credential file to: %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -87,9 +106,18 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 }
 
 func getOAuthConfig() *oauth2.Config {
+	CLIENT_ID := os.Getenv("GOOGLE_CLIENT_ID")
+	if CLIENT_ID == "" {
+		CLIENT_ID = PRODUCTION_CLIENT_ID
+	}
+	CLIENT_SECRET := os.Getenv("GOOGLE_CLIENT_SECRET")
+	if CLIENT_SECRET == "" {
+		CLIENT_SECRET = PRODUCTION_CLIENT_SECRET
+	}
+
 	config := &oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		ClientID:     CLIENT_ID,
+		ClientSecret: CLIENT_SECRET,
 		RedirectURL:  "http://localhost:8080/callback",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/calendar",

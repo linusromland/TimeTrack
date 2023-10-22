@@ -1,0 +1,36 @@
+before:
+    hooks:
+        - go mod tidy
+        - go generate ./...
+
+builds:
+    - env:
+          - CGO_ENABLED=0
+          - PRODUCTION=true
+      goos:
+          - linux
+          - windows
+          - darwin
+      main: ./src/main.go
+      ldflags:
+          - '-X TimeTrack/src/main.version={{.Version}} -X TimeTrack/src/main.commit={{.Commit}} -X TimeTrack/src/main.date={{.Date}} -X TimeTrack/src/oauth.PRODUCTION_CLIENT_ID={{ .Env.GOOGLE_CLIENT_ID }} -X TimeTrack/src/oauth.PRODUCTION_CLIENT_SECRET={{ .Env.GOOGLE_CLIENT_SECRET }}'
+
+archives:
+    - format: tar.gz
+      name_template: >-
+          {{ .ProjectName }}_
+          {{- title .Os }}_
+          {{- if eq .Arch "amd64" }}x86_64
+          {{- else if eq .Arch "386" }}i386
+          {{- else }}{{ .Arch }}{{ end }}
+          {{- if .Arm }}v{{ .Arm }}{{ end }}
+      format_overrides:
+          - goos: windows
+            format: zip
+
+changelog:
+    sort: asc
+    filters:
+        exclude:
+            - '^docs:'
+            - '^test:'
