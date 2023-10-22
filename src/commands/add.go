@@ -2,6 +2,7 @@ package commands
 
 import (
 	"TimeTrack/src/calendar"
+	"TimeTrack/src/database"
 	"TimeTrack/src/utils"
 	"fmt"
 	"time"
@@ -56,6 +57,17 @@ var AddCommand = &cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) error {
+		db, err := database.OpenDB()
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+		calendarId := database.GetData(db, "calendarId")
+		if calendarId == "" {
+			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
+			return nil
+		}
+
 		if !utils.IsValidTime(c.String("start")) {
 			return cli.Exit("Invalid start time. Please use the following format: HH:mm", 1)
 		}
@@ -85,7 +97,7 @@ var AddCommand = &cli.Command{
 				return cli.Exit("End time is before start time.", 1)
 			}
 
-			event := calendar.CreateEvent(c.String("name"), c.String("description"), startTime, endTime)
+			event := calendar.CreateEvent(calendarId, c.String("name"), c.String("description"), startTime, endTime)
 			fmt.Printf("Event created with the following information:\nName: %s\nStart: %s\nEnd: %s\nLink: %s\n", event.Summary, utils.FormatDate(event.Start.DateTime, time.RFC3339), utils.FormatDate(event.End.DateTime, time.RFC3339), event.HtmlLink)
 		} else {
 			fmt.Println("Task not created.")

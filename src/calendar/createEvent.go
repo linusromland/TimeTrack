@@ -6,8 +6,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func CreateEvent(title string, description string, startTime string, endTime string) *calendar.Event {
-	calendarId := "hello@linusromland.com"
+func CreateEvent(calendarId string, title string, description string, startTime string, endTime string) *calendar.Event {
 	service := GetCalendarService()
 
 	timeZone := time.Now().Format("Z07:00")
