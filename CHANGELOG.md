@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.1.2 (2023-10-22)
+
+-   Updated Google Credentials.
+
 ## 0.1.1 (2023-10-22)
 
 -   Added installation scripts for Windows & macOS.
