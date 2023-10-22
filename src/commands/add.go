@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"TimeTrack/src/calendar"
 	"TimeTrack/src/utils"
 	"fmt"
 	"time"
@@ -22,6 +23,7 @@ var AddCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "description",
 			Aliases: []string{"desc", "D"},
+			Value:   "",
 			Usage:   "Description of task",
 		},
 		&cli.StringFlag{
@@ -42,6 +44,11 @@ var AddCommand = &cli.Command{
 			Aliases: []string{"d"},
 			Usage:   "Date of task. (format: YYYY-MM-DD)",
 		},
+		&cli.StringFlag{
+			Name:    "endDate",
+			Aliases: []string{"E"},
+			Usage:   "End date of task. If not provided, the date flag will be used. (format: YYYY-MM-DD)",
+		},
 		&cli.BoolFlag{
 			Name:    "skipConfirmation",
 			Aliases: []string{"yes", "y"},
@@ -58,20 +65,28 @@ var AddCommand = &cli.Command{
 		if !utils.IsValidDate(c.String("date")) {
 			return cli.Exit("Invalid date. Please use the following format: YYYY-MM-DD", 1)
 		}
-
-		fmt.Println("Creating task with the following parameters:")
-		fmt.Println("Name:", c.String("name"))
-		if c.String("description") != "" {
-			fmt.Println("Description:", c.String("description"))
+		if c.String("endDate") != "" && !utils.IsValidDate(c.String("endDate")) {
+			return cli.Exit("Invalid end date. Please use the following format: YYYY-MM-DD", 1)
 		}
-		fmt.Println("Start:", c.String("start"))
-		fmt.Println("End:", c.String("end"))
-		if c.String("date") != "" {
-			fmt.Println("Date:", c.String("date"))
-		}
-		if c.Bool("skipConfirmation") || utils.Confirm("Are you sure you want to create this task?") {
-			fmt.Println("Task created.")
 
+		endDate := c.String("endDate")
+		if endDate == "" {
+			endDate = c.String("date")
+		}
+
+		startTime := fmt.Sprintf("%sT%s:00+02:00", c.String("date"), c.String("start"))
+		endTime := fmt.Sprintf("%sT%s:00+02:00", endDate, c.String("end"))
+
+		if c.Bool("skipConfirmation") || utils.Confirm("This will create a new task with the following information:\nName: "+c.String("name")+"\nStart: "+utils.FormatDate(startTime, time.RFC3339)+"\nEnd: "+utils.FormatDate(endTime, time.RFC3339)+"\n\nAre you sure?") {
+
+			startTimeParsed, _ := time.Parse(time.RFC3339, startTime)
+			endTimeParsed, _ := time.Parse(time.RFC3339, endTime)
+			if endTimeParsed.Before(startTimeParsed) {
+				return cli.Exit("End time is before start time.", 1)
+			}
+
+			event := calendar.CreateEvent(c.String("name"), c.String("description"), startTime, endTime)
+			fmt.Printf("Event created with the following information:\nName: %s\nStart: %s\nEnd: %s\nLink: %s\n", event.Summary, utils.FormatDate(event.Start.DateTime, time.RFC3339), utils.FormatDate(event.End.DateTime, time.RFC3339), event.HtmlLink)
 		} else {
 			fmt.Println("Task not created.")
 		}
