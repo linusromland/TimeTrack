@@ -6,7 +6,7 @@ import (
 	badger "github.com/dgraph-io/badger/v4"
 )
 
-func InsertData(db *badger.DB, key, value string) error {
+func SetData(db *badger.DB, key, value string) error {
 	err := db.Update(func(txn *badger.Txn) error {
 		err := txn.Set([]byte(key), []byte(value))
 		return err
