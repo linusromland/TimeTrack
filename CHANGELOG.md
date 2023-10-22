@@ -1,5 +1,10 @@
 # TimeTrack Changelog
 
+## 0.1.3 (2023-10-22)
+
+-   Fixed bug where --version flag would always show version as "dev".
+-   Added error message when no events are found.
+
 ## 0.1.2 (2023-10-22)
 
 -   Updated Google Credentials.
