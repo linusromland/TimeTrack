@@ -12,7 +12,51 @@ TimeTrack is a Command Line Interface (CLI) application designed for efficient t
 
 ## Installation
 
-Instructions coming soon.
+macOS:
+
+Open your terminal.
+
+Run the following command to download and install TimeTrack:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.sh | bash
+```
+
+Windows:
+
+For users with PowerShell (Windows 10 and newer):
+
+1. Open PowerShell as Administrator.
+
+2. Run the following command:
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.bat" -OutFile "install.bat"; .\install.bat
+```
+
+Linux:
+
+For Linux users, manual installation is required:
+
+1. Navigate to the releases page of the TimeTrack repository.
+
+2. Download the latest .tar.gz archive suitable for your OS and architecture.
+
+3. Extract the archive using the following command:
+
+```bash
+tar -xzf TimeTrack\_<YOUR_OS_AND_ARCH>.tar.gz
+```
+
+Move the TimeTrack binary to a directory in your PATH, typically `/usr/local/bin:`
+
+```bash
+sudo mv TimeTrack /usr/local/bin/
+```
+
+### Update
+
+To update TimeTrack to the latest version, simply re-run the installation command for your respective operating system.
 
 ## Collaborating
 

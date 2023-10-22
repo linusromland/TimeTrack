@@ -1,5 +1,11 @@
 # TimeTrack Changelog
 
+## 0.1.1 (2023-10-22)
+
+-   Added installation scripts for Windows & macOS.
+-   Added installation instructions to README.md.
+-   Added update instructions to README.md.
+
 ## 0.1.0 (2023-10-22)
 
 Initial Release:
