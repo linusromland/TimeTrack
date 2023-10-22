@@ -10,4 +10,4 @@ while IFS= read -r line; do
     fi
 done < .env.production
 
-goreleaser release
+goreleaser release --clean
