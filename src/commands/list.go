@@ -75,6 +75,12 @@ var ListCommand = &cli.Command{
 		}
 
 		events := calendar.GetEvents(calendarId, startTime, endTime)
+
+		if len(events.Items) == 0 {
+			fmt.Println("No events found.")
+			return nil
+		}
+
 		parsedEvents := googleEventsToEvents(events)
 
 		printEvents(parsedEvents, parsedStart, parsedEnd)
