@@ -98,7 +98,14 @@ var AddCommand = &cli.Command{
 			}
 
 			event := calendar.CreateEvent(calendarId, c.String("name"), c.String("description"), startTime, endTime)
-			fmt.Printf("Event created with the following information:\nName: %s\nStart: %s\nEnd: %s\nLink: %s\n", event.Summary, utils.FormatDate(event.Start.DateTime, time.RFC3339), utils.FormatDate(event.End.DateTime, time.RFC3339), event.HtmlLink)
+			fmt.Printf("Event created with the following information:")
+			fmt.Printf("\nName: %s\n", c.String("name"))
+			if c.String("description") != "" {
+				fmt.Printf("Description: %s\n", c.String("description"))
+			}
+			fmt.Printf("Start: %s\n", utils.FormatDate(startTime, time.RFC3339))
+			fmt.Printf("End: %s\n", utils.FormatDate(endTime, time.RFC3339))
+			fmt.Printf("Event created: %s\n", event.HtmlLink)
 		} else {
 			fmt.Println("Task not created.")
 		}

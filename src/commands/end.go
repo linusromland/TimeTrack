@@ -71,6 +71,9 @@ var EndCommand = &cli.Command{
 		hours, minutes := utils.GetTaskTime(parsedStartTime, parsedEndTime)
 
 		fmt.Printf("Ended task '%s' at %s\n", currentTask, parsedEndTime.Format("2006-01-02 15:04"))
+		if c.String("description") != "" {
+			fmt.Printf("Description: %s\n", c.String("description"))
+		}
 		fmt.Printf("Duration: %dh %dm\n", hours, minutes)
 		fmt.Printf("Event created: %s\n", event.HtmlLink)
 		return nil
