@@ -16,11 +16,8 @@ var (
 
 func main() {
 	if version == "dev" {
+		fmt.Println("Running in development mode.")
 		godotenv.Load()
-	}
-
-	if os.Getenv("enviroment") == "development" {
-		fmt.Println("Running in development mode")
 	}
 
 	app := &cli.App{

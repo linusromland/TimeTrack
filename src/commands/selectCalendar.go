@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var SelectDatabaseCommand = &cli.Command{
-	Name:    "selectDatabase",
-	Aliases: []string{"sd"},
+var SelectCalendarCommand = &cli.Command{
+	Name:    "selectCalendar",
+	Aliases: []string{"sc"},
 	Usage:   "Select database",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
