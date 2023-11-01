@@ -1,5 +1,14 @@
 # TimeTrack Changelog
 
+## 0.2.0 (2023-11-01)
+
+-   Added `change` command to change the current task.
+-   Added `info` command to show information about the current task.
+-   Fixed issue where timezones were not being handled correctly.
+-   Improved logging.
+-   Made description optional when ending a task.
+-   Fixed type where `selectCalendar` was being called `selectDatabase`.
+
 ## 0.1.3 (2023-10-22)
 
 -   Fixed bug where --version flag would always show version as "dev".
