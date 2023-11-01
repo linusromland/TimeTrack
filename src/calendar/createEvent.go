@@ -9,16 +9,20 @@ import (
 func CreateEvent(calendarId string, title string, description string, startTime string, endTime string) *calendar.Event {
 	service := GetCalendarService()
 
+	// Removes the timezone from the time string
+	parsedStartTime := startTime[:len(startTime)-6]
+	parsedEndTime := endTime[:len(endTime)-6]
+
 	timeZone := time.Now().Format("Z07:00")
 	event := &calendar.Event{
 		Summary:     title,
 		Description: description,
 		Start: &calendar.EventDateTime{
-			DateTime: startTime,
+			DateTime: parsedStartTime,
 			TimeZone: timeZone,
 		},
 		End: &calendar.EventDateTime{
-			DateTime: endTime,
+			DateTime: parsedEndTime,
 			TimeZone: timeZone,
 		},
 	}
