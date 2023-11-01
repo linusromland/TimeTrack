@@ -16,10 +16,10 @@ var EndCommand = &cli.Command{
 	Usage:   "end a task",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "description",
-			Aliases:  []string{"desc", "D"},
-			Required: true,
-			Usage:    "Description of task",
+			Name:    "description",
+			Aliases: []string{"desc", "D"},
+			Value:   "",
+			Usage:   "Description of task",
 		},
 		&cli.StringFlag{
 			Name:    "end",
