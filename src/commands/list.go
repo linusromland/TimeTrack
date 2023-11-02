@@ -17,7 +17,7 @@ import (
 var ListCommand = &cli.Command{
 	Name:    "list",
 	Aliases: []string{"l"},
-	Usage:   "list all tasks",
+	Usage:   "List all tasks",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "start",

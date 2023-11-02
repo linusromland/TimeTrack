@@ -12,7 +12,7 @@ import (
 var StartCommand = &cli.Command{
 	Name:    "start",
 	Aliases: []string{"s"},
-	Usage:   "start a task",
+	Usage:   "Start a task",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "name",

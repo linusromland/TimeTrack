@@ -13,7 +13,7 @@ import (
 var SelectCalendarCommand = &cli.Command{
 	Name:    "selectCalendar",
 	Aliases: []string{"sc"},
-	Usage:   "Select database",
+	Usage:   "Select calendar",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "calendarId",

@@ -11,7 +11,7 @@ import (
 var AbortCommand = &cli.Command{
 	Name:    "abort",
 	Aliases: []string{"a"},
-	Usage:   "abort a task",
+	Usage:   "Abort a task",
 	Action: func(c *cli.Context) error {
 		db, err := database.OpenDB()
 		if err != nil {

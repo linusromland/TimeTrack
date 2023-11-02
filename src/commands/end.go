@@ -13,7 +13,7 @@ import (
 var EndCommand = &cli.Command{
 	Name:    "end",
 	Aliases: []string{"e"},
-	Usage:   "end a task",
+	Usage:   "End a task",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "description",

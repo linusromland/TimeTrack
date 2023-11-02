@@ -13,7 +13,7 @@ import (
 var ChangeCommand = &cli.Command{
 	Name:    "change",
 	Aliases: []string{"c"},
-	Usage:   "end the current task and start a new one",
+	Usage:   "End the current task and start a new one",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "end",

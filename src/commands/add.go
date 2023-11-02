@@ -13,7 +13,7 @@ import (
 var AddCommand = &cli.Command{
 	Name:    "add",
 	Aliases: []string{"a"},
-	Usage:   "add a task to the list",
+	Usage:   "Add a task to the list",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "name",
