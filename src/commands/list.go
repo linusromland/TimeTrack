@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/olekukonko/tablewriter"
@@ -33,7 +34,7 @@ var ListCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:    "unit",
 			Aliases: []string{"u"},
-			Usage:   "Unit of time. (options: day, week, month)",
+			Usage:   "Unit of time. (options: d (days), w (week), m (month))",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -83,7 +84,8 @@ var ListCommand = &cli.Command{
 
 		parsedEvents := googleEventsToEvents(events)
 
-		printEvents(parsedEvents, parsedStart, parsedEnd)
+		unit := c.String("unit")
+		printEvents(parsedEvents, parsedStart, parsedEnd, unit)
 
 		return nil
 	},
@@ -145,6 +147,26 @@ func getUnit(daysBetween int) string {
 	}
 }
 
+func verifyUnit(unit string, daysBetween int) (string, error) {
+	unitChar := strings.ToLower(string(unit[0]))
+
+	if unitChar == "d" || unit == "w" || unit == "m" {
+		if unitChar == "d" && daysBetween == 0 {
+			return "day", nil
+		}
+
+		unitMap := map[string]string{
+			"d": "days",
+			"w": "week",
+			"m": "month",
+		}
+
+		return unitMap[unitChar], nil
+	} else {
+		return "", fmt.Errorf("invalid unit. Valid units are: d (days), w (week), m (month)")
+	}
+}
+
 func getDurationInSeconds(start, end time.Time) int64 {
 	duration := end.Sub(start)
 	return int64(duration.Seconds())
@@ -197,9 +219,19 @@ func getTotalTime(events []Event) int64 {
 	return totalTime
 }
 
-func printEvents(events []Event, startDate, endDate time.Time) {
+func printEvents(events []Event, startDate, endDate time.Time, unit string) {
 	daysBetween := int(endDate.Sub(startDate).Hours() / 24)
-	unit := getUnit(daysBetween)
+
+	if unit == "" {
+		unit = getUnit(daysBetween)
+	} else {
+		parsedUnit, err := verifyUnit(unit, daysBetween)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		unit = parsedUnit
+	}
 
 	totalTimePerTicket := getTicketDurations(events)
 	totalTime := getTotalTime(events)
