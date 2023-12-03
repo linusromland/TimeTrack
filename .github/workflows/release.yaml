@@ -62,3 +62,15 @@ jobs:
           ENVIROMENT: production
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+
+      - name: Update Release Notes
+        if: steps.check_release.outputs.exists == 'false' && steps.version.outputs.version != ''
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          RELEASE_NOTES=$(awk -v ver="$VERSION" '/^## \[/{flag=0} /^## \['ver'\]/{flag=1} flag' CHANGELOG.md)
+          RELEASE_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/v$VERSION"
+          RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" $RELEASE_URL | jq -r .id)
+          UPDATE_URL="https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+          curl -s -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d "{\"body\": \"$RELEASE_NOTES\"}" $UPDATE_URL
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
