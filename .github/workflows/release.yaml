@@ -18,11 +18,6 @@ jobs:
               with:
                   go-version: '1.21.3'
 
-            - name: Install Goreleaser
-              run: |
-                  curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh -s -- -b $(go env GOPATH)/bin
-              if: success()
-
             - name: Determine Version
               id: version
               run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
@@ -37,6 +32,11 @@ jobs:
                   fi
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Install GoReleaser
+              run: |
+                  curl -sL https://github.com/goreleaser/goreleaser/releases/download/v1.2.3/goreleaser_Linux_x86_64.tar.gz | tar -xz
+                  sudo mv goreleaser /usr/local/bin/
 
             - name: Build and Release
               run: goreleaser release --clean
