@@ -67,10 +67,11 @@ jobs:
         if: steps.check_release.outputs.exists == 'false' && steps.version.outputs.version != ''
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          RELEASE_NOTES=$(awk -v ver="$VERSION" '/^## \[/{flag=0} /^## \['ver'\]/{flag=1} flag' CHANGELOG.md)
+          RELEASE_NOTES=$(awk -v ver="$VERSION" 'BEGIN {RS="## "; FS="\n"} $1 ~ ver {print substr($0, index($0,$2))}' CHANGELOG.md)
+          RELEASE_NOTES_ESCAPED=$(echo "$RELEASE_NOTES" | sed ':a;N;$!ba;s/\n/\\n/g')
           RELEASE_URL="https://api.github.com/repos/${{ github.repository }}/releases/tags/v$VERSION"
           RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" $RELEASE_URL | jq -r .id)
           UPDATE_URL="https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-          curl -s -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d "{\"body\": \"$RELEASE_NOTES\"}" $UPDATE_URL
+          curl -s -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d "{\"body\": \"$RELEASE_NOTES_ESCAPED\"}" $UPDATE_URL
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
