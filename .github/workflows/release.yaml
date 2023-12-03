@@ -23,20 +23,20 @@ jobs:
                   curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh -s -- -b $(go env GOPATH)/bin
               if: success()
 
-              - name: Determine Version
+            - name: Determine Version
               id: version
               run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
-              
+
             - name: Create Git Tag
               run: |
-                if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
-                  git config --local user.email "action@github.com"
-                  git config --local user.name "GitHub Action"
-                  git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
-                  git push origin "v${{ steps.version.outputs.version }}" --follow-tags
-                fi
+                  if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
+                    git config --local user.email "action@github.com"
+                    git config --local user.name "GitHub Action"
+                    git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
+                    git push origin "v${{ steps.version.outputs.version }}" --follow-tags
+                  fi
               env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Build and Release
               run: goreleaser release --clean
