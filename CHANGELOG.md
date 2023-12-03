@@ -3,6 +3,7 @@
 ## 0.3.1 (2023-12-03)
 
 -   Fixed bug where `list` command would not use the unit specified by the user.
+-   Added `--next` and `--last` flags to `list` command to show the next or last unit of time.
 
 ## 0.3.0 (2023-12-03)
 
