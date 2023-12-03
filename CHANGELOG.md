@@ -1,5 +1,10 @@
 # TimeTrack Changelog
 
+## 0.3.0 (2023-12-03)
+
+-   Added automatic check for updates on startup.
+-   Added `update` command to manually check and update.
+
 ## 0.2.0 (2023-11-01)
 
 -   Added `change` command to change the current task.
