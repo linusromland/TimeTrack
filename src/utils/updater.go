@@ -15,10 +15,10 @@ import (
 )
 
 func parseVersion(version string) int {
-	// if version == "dev" {
-	// 	// Max integer value.
-	// 	return 2147483647
-	// }
+	if version == "dev" {
+		// Max integer value.
+		return 2147483647
+	}
 
 	versionRegex := regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
 	if !versionRegex.MatchString(version) {
