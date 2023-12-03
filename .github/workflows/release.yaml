@@ -23,10 +23,10 @@ jobs:
                   curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh -s -- -b $(go env GOPATH)/bin
               if: success()
 
-            - name: Determine Version
+              - name: Determine Version
               id: version
-              run: echo "::set-output name=version::$(grep -oP '(?<=## )[^ ]+(?=\()' CHANGELOG.md | head -1)"
-
+              run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
+              
             - name: Create Git Tag
               run: |
                 if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
