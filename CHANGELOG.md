@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## Test (2023-12-03)
+
+-   Testing release
+
 ## 0.2.0 (2023-11-01)
 
 -   Added `change` command to change the current task.

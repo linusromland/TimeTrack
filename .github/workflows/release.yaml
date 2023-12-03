@@ -1,0 +1,45 @@
+name: Release Workflow
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Set up Go
+              uses: actions/setup-go@v2
+              with:
+                  go-version: '1.17' # Change this to your Go version
+
+            - name: Install Goreleaser
+              run: |
+                  curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh -s -- -b $(go env GOPATH)/bin
+              if: success()
+
+            - name: Determine Version
+              id: version
+              run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: dist/*
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              if: steps.version.outputs.version != ''
+
+            - name: Build and Release
+              run: goreleaser release --clean
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ENVIROMENT: production
+                  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+                  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+              if: steps.version.outputs.version != ''
