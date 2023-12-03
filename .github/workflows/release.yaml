@@ -30,9 +30,12 @@ jobs:
             - name: Create Git Tag
               run: |
                 if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
+                  git config --local user.email "action@github.com"
+                  git config --local user.name "GitHub Action"
                   git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
                   git push origin "v${{ steps.version.outputs.version }}"
                 fi
+
 
             - name: Build and Release
               run: goreleaser release --clean
