@@ -32,15 +32,15 @@ jobs:
                 if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
                   git config --local user.email "action@github.com"
                   git config --local user.name "GitHub Action"
-                  git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
-                  git push origin "v${{ steps.version.outputs.version }}" -u ${{ secrets.GH_TOKEN }}
+                  git tag -a "vtest" -m "Version vtest"
+                  git push origin "vtest" -u ${{ secrets.GH_TOKEN }}
                 fi
 
-            - name: Build and Release
-              run: goreleaser release --clean
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-                  ENVIROMENT: production
-                  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-                  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-              if: steps.version.outputs.version != ''
+            # - name: Build and Release
+            #   run: goreleaser release --clean
+            #   env:
+            #       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+            #       ENVIROMENT: production
+            #       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            #       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+            #   if: steps.version.outputs.version != ''
