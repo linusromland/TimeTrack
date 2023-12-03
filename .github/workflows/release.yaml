@@ -39,7 +39,7 @@ jobs:
                   sudo mv goreleaser /usr/local/bin/
 
             - name: Build and Release
-              run: goreleaser release --clean
+              run: goreleaser release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ENVIROMENT: production
