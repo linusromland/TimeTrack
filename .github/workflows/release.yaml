@@ -16,7 +16,7 @@ jobs:
             - name: Set up Go
               uses: actions/setup-go@v2
               with:
-                  go-version: '1.17' # Change this to your Go version
+                  go-version: '1.21.3'
 
             - name: Install Goreleaser
               run: |
@@ -28,12 +28,19 @@ jobs:
               run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
 
             - name: Create GitHub Release
-              uses: softprops/action-gh-release@v1
-              with:
-                  files: dist/*
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              if: steps.version.outputs.version != ''
+              run: |
+                if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
+                  version_content=$(awk "/^## ${{ steps.version.outputs.version }} /,/^## [0-9]/" CHANGELOG.md | grep -v "^## [0-9]")
+                  curl -X POST \
+                    -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    https://api.github.com/repos/${{ github.repository }}/releases \
+                    -d '{
+                        "tag_name": "v${{ steps.version.outputs.version }}",
+                        "name": "Release v${{ steps.version.outputs.version }}",
+                        "body": "$version_content"
+                      }'
+                fi
 
             - name: Build and Release
               run: goreleaser release --clean
