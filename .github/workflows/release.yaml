@@ -1,48 +1,54 @@
 name: Release Workflow
 
 on:
-    push:
-        branches:
-            - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
 
 jobs:
-    release:
-        runs-on: ubuntu-latest
+  release:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-            - name: Set up Go
-              uses: actions/setup-go@v2
-              with:
-                  go-version: '1.21.3'
+      - run: git fetch --force --tags
 
-            - name: Determine Version
-              id: version
-              run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.3'
 
-            - name: Create Git Tag
-              run: |
-                  if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
-                    git config --local user.email "action@github.com"
-                    git config --local user.name "GitHub Action"
-                    git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
-                    git push origin "v${{ steps.version.outputs.version }}" --follow-tags
-                  fi
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine Version
+        id: version
+        run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
 
-            - name: Install GoReleaser
-              run: |
-                  curl -sL https://github.com/goreleaser/goreleaser/releases/download/v1.2.3/goreleaser_Linux_x86_64.tar.gz | tar -xz
-                  sudo mv goreleaser /usr/local/bin/
+      - name: Create Git Tag
+        run: |
+            if [ "${{ steps.version.outputs.version }}" != "" ]; then
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+              git tag -a "v${{ steps.version.outputs.version }}" -m "Version v${{ steps.version.outputs.version }}"
+              git push origin "v${{ steps.version.outputs.version }}" --follow-tags
+            fi
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build and Release
-              run: goreleaser release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  ENVIROMENT: production
-                  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-                  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-              if: steps.version.outputs.version != ''
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENVIROMENT: production
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        if: steps.version.outputs.version != ''
