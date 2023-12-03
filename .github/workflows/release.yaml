@@ -31,8 +31,9 @@ jobs:
               run: |
                 if [ "${{ steps.version.outputs.version != '' }}" == "true" ]; then
                   version_content=$(awk "/^## ${{ steps.version.outputs.version }} /,/^## [0-9]/" CHANGELOG.md | grep -v "^## [0-9]")
+                  echo $version_content
                   curl -X POST \
-                    -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                     -H "Accept: application/vnd.github.v3+json" \
                     https://api.github.com/repos/${{ github.repository }}/releases \
                     -d '{
@@ -45,7 +46,7 @@ jobs:
             - name: Build and Release
               run: goreleaser release --clean
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
                   ENVIROMENT: production
                   GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
                   GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
