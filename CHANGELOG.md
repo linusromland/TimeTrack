@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.3.1 (2023-12-03)
+
+-   Fixed bug where `list` command would not use the unit specified by the user.
+
 ## 0.3.0 (2023-12-03)
 
 -   Added automatic check for updates on startup.
