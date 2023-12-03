@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
@@ -15,7 +16,7 @@ import (
 )
 
 func parseVersion(version string) int {
-	if version == "dev" {
+	if version == "vdev" {
 		// Max integer value.
 		return 2147483647
 	}
@@ -44,30 +45,6 @@ func githubRepo() (string, string) {
 	githubRepo := "TimeTrack"
 
 	return githubUser, githubRepo
-}
-
-func downloadFile(url string, filepath string) error {
-	// Create the file.
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Get the data from the url.
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Write the data to the file.
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func CheckForUpdate(version string, skipChecks bool) (bool, error) {
@@ -106,7 +83,7 @@ func CheckForUpdate(version string, skipChecks bool) (bool, error) {
 	}
 
 	// Parse the version number to an integer.
-	currentVersion := parseVersion(version)
+	currentVersion := parseVersion("v" + version)
 
 	githubUser, githubRepo := githubRepo()
 
@@ -182,64 +159,28 @@ func CheckForUpdate(version string, skipChecks bool) (bool, error) {
 }
 
 func UpdateVersion(version string) error {
-	githubUser, githubRepo := githubRepo()
-
 	// Get the OS type.
 	osType := runtime.GOOS
 	osType = strings.Title(osType)
 
-	// Get the OS architecture.
-	osArch := runtime.GOARCH
-
-	// Get the file extension.
-	fileExtension := ".tar.gz"
-	if osType == "windows" {
-		fileExtension = ".zip"
+	// Define the command to run on Windows and macOS, and a default message for other systems.
+	var cmd *exec.Cmd
+	switch osType {
+	case "Windows":
+		cmd = exec.Command("powershell", "-Command", "Invoke-WebRequest", "-Uri", "https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.bat", "-OutFile", "install.bat", ";", ".\\install.bat")
+	case "Darwin":
+		cmd = exec.Command("bash", "-c", "curl -sSL https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.sh | bash")
+	default:
+		fmt.Println("Sorry, no auto-update available for your system.")
+		return nil
 	}
 
-	// Create the download link.
-	downloadLink := fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/TimeTrack_%s_%s%s", githubUser, githubRepo, version, osType, osArch, fileExtension)
+	// Set cmd.Stdout and cmd.Stderr to os.Stdout and os.Stderr to see the command's output.
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-	tempDir := os.TempDir()
-
-	// Download the latest release.
-	err := downloadFile(downloadLink, tempDir+"/timetrack"+fileExtension)
-	if err != nil {
-		return err
-	}
-
-	err = ExtractArchive(tempDir+"/timetrack"+fileExtension, tempDir+"/timetrack")
-	if err != nil {
-		return err
-	}
-
-	installDir := "/usr/local/bin/"
-	if osType == "windows" {
-		installDir = os.Getenv("USERPROFILE") + "\\AppData\\Local\\Microsoft\\WindowsApps\\"
-	}
-
-	// Move the file.
-	err = os.Rename(tempDir+"/timetrack/timetrack", installDir+"timetrack")
-	if err != nil {
-
-		// If error contains "permission denied", try to move the file with sudo.
-		if strings.Contains(err.Error(), "permission denied") {
-			fmt.Println("Permission denied, try rerunning the command as an administrator.")
-		} else {
-			return err
-		}
-	} else {
-		fmt.Println("TimeTrack has been updated to version:", version)
-	}
-
-	// Remove the temp directory.
-	err = os.RemoveAll(tempDir + "/timetrack")
-	if err != nil {
-		return err
-	}
-
-	// Remove the downloaded file.
-	err = os.Remove(tempDir + "/timetrack" + fileExtension)
+	// Run the command.
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}
