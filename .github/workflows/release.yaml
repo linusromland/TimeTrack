@@ -4,7 +4,7 @@ on:
     push:
         branches:
             - master
-            - release/settings-overhaul
+            - release/*
 
 permissions:
     contents: write
