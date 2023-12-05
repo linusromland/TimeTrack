@@ -21,11 +21,6 @@ jobs:
 
             - run: git fetch --force --tags
 
-            - name: Set up Go
-              uses: actions/setup-go@v4
-              with:
-                  go-version: '1.21.3'
-
             - name: Determine Version
               id: version
               run: echo "::set-output name=version::$(grep -oP '(?<=^## )\d+\.\d+\.\d+' CHANGELOG.md | head -1)"
@@ -50,6 +45,12 @@ jobs:
                   git push origin "v${{ steps.version.outputs.version }}" --follow-tags
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Set up Go
+              if: steps.check_release.outputs.exists == 'false' && steps.version.outputs.version != ''
+              uses: actions/setup-go@v4
+              with:
+                  go-version: '1.21.3'
 
             - name: Run GoReleaser
               if: steps.check_release.outputs.exists == 'false' && steps.version.outputs.version != ''
