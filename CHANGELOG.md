@@ -1,6 +1,6 @@
 # TimeTrack Changelog
 
-# 9.9.9 (2023-12-05)
+## 9.9.9 (2023-12-05)
 
 -   Test release
 
