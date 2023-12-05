@@ -1,10 +1,6 @@
 name: Release Workflow
 
-on:
-    push:
-        branches:
-            - master
-            - release/*
+on: [push]
 
 permissions:
     contents: write
