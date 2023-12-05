@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"TimeTrack/cli/commands"
-	"TimeTrack/cli/utils"
+	"TimeTrack/core/utils"
 
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"

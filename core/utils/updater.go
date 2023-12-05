@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"TimeTrack/src/database"
+	"TimeTrack/core/database"
 )
 
 func parseVersion(version string) int {

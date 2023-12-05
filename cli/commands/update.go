@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"TimeTrack/src/utils"
+	"TimeTrack/core/utils"
 	"fmt"
 
 	"github.com/urfave/cli/v2"
