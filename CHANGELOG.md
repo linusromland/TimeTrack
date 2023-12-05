@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+# Test (2023-12-05)
+
+-   Test release
+
 ## 0.3.1 (2023-12-03)
 
 -   Fixed bug where `list` command would not use the unit specified by the user.
