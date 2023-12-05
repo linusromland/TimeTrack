@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/olekukonko/tablewriter"
@@ -31,9 +33,19 @@ var ListCommand = &cli.Command{
 			Usage:   "End date of task. If not set, the start date will be used. (format: YYYY-MM-DD)",
 		},
 		&cli.StringFlag{
+			Name:    "next",
+			Aliases: []string{"n"},
+			Usage:   "Show tasks from the next x units. This will start from the start date. (format: <number><unit>, unit options: d (days), w (week), m (month))",
+		},
+		&cli.StringFlag{
+			Name:    "last",
+			Aliases: []string{"l"},
+			Usage:   "Show tasks from the last x units. This will start from the start date and go backwards. (format: <number><unit>, unit options: d (days), w (week), m (month))",
+		},
+		&cli.StringFlag{
 			Name:    "unit",
 			Aliases: []string{"u"},
-			Usage:   "Unit of time. (options: day, week, month)",
+			Usage:   "Unit of time. (options: d (days), w (week), m (month))",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -48,25 +60,77 @@ var ListCommand = &cli.Command{
 			return nil
 		}
 
-		if !utils.IsValidDate(c.String("start")) {
+		start := c.String("start")
+
+		if !utils.IsValidDate(start) {
 			return cli.Exit("Invalid start date. Please use the following format: YYYY-MM-DD", 1)
+		}
+
+		if c.String("next") != "" && c.String("last") != "" {
+			return cli.Exit("Please use either --next or --last, not both.", 1)
+		}
+
+		nextDuration, nextUnit, err := parseDurationString(c.String("next"))
+		if err != nil {
+			return cli.Exit(err.Error(), 1)
+		}
+
+		if nextUnit != "" {
+			parsedUnit, err := verifyUnit(nextUnit, 999)
+			if err != nil {
+				cli.Exit("Invalid unit. Valid units are: d (days), w (week), m (month)", 1)
+			}
+			nextUnit = parsedUnit
+		}
+
+		lastDuration, lastUnit, err := parseDurationString(c.String("last"))
+		if err != nil {
+			return cli.Exit(err.Error(), 1)
+		}
+
+		if lastUnit != "" {
+			parsedUnit, err := verifyUnit(lastUnit, 999)
+			if err != nil {
+				cli.Exit("Invalid last unit. Valid units are: d (days), w (week), m (month)", 1)
+			}
+			lastUnit = parsedUnit
+		}
+
+		if c.String("end") != "" && (lastUnit != "" || nextUnit != "") {
+			return cli.Exit("end date can not be used with --next or --last", 1)
 		}
 
 		if c.String("end") != "" && !utils.IsValidDate(c.String("end")) {
 			return cli.Exit("Invalid end date. Please use the following format: YYYY-MM-DD", 1)
 		}
 
-		if c.String("end") == "" {
-			c.Set("end", c.String("start"))
-		}
-
-		startTime := fmt.Sprintf("%sT00:00:00+02:00", c.String("start"))
-		endTime := fmt.Sprintf("%sT23:59:59+02:00", c.String("end"))
+		startTime := fmt.Sprintf("%sT00:00:00+02:00", start)
 		parsedStart, err := time.Parse(time.RFC3339, startTime)
 		if err != nil {
 			fmt.Printf("Error parsing start time: %v\n", err)
 			return nil
 		}
+
+		if c.String("end") == "" {
+			if nextUnit != "" {
+				c.Set("end", getDateFromDuration(parsedStart, nextDuration, nextUnit, "next"))
+			} else if lastUnit != "" {
+				startDate := start
+				newStartDate := getDateFromDuration(parsedStart, lastDuration, lastUnit, "last")
+				startTime = fmt.Sprintf("%sT00:00:00+02:00", newStartDate)
+				parsedStart, err = time.Parse(time.RFC3339, startTime)
+				if err != nil {
+					fmt.Printf("Error parsing start time: %v\n", err)
+					return nil
+				}
+
+				c.Set("end", startDate)
+			} else {
+				c.Set("end", start)
+			}
+		}
+
+		endTime := fmt.Sprintf("%sT23:59:59+02:00", c.String("end"))
 
 		parsedEnd, err := time.Parse(time.RFC3339, endTime)
 		if err != nil {
@@ -83,7 +147,8 @@ var ListCommand = &cli.Command{
 
 		parsedEvents := googleEventsToEvents(events)
 
-		printEvents(parsedEvents, parsedStart, parsedEnd)
+		unit := c.String("unit")
+		printEvents(parsedEvents, parsedStart, parsedEnd, unit)
 
 		return nil
 	},
@@ -145,6 +210,68 @@ func getUnit(daysBetween int) string {
 	}
 }
 
+func verifyUnit(unit string, daysBetween int) (string, error) {
+	unitChar := strings.ToLower(string(unit[0]))
+
+	if unitChar == "d" || unit == "w" || unit == "m" {
+		if unitChar == "d" && daysBetween == 0 {
+			return "day", nil
+		}
+
+		unitMap := map[string]string{
+			"d": "days",
+			"w": "week",
+			"m": "month",
+		}
+
+		return unitMap[unitChar], nil
+	} else {
+		return "", fmt.Errorf("invalid unit. Valid units are: d (days), w (week), m (month)")
+	}
+}
+
+func parseDurationString(durationString string) (int, string, error) {
+	if durationString == "" {
+		return 0, "", nil
+	}
+
+	number := durationString[:len(durationString)-1]
+	unit := durationString[len(durationString)-1:]
+
+	parsedNumber, err := strconv.Atoi(number)
+	if err != nil {
+		return 0, "", fmt.Errorf("invalid number: %s", number)
+	}
+
+	return parsedNumber, unit, nil
+}
+
+func getDateFromDuration(startDate time.Time, duration int, unit string, direction string) string {
+	var date string
+	if direction == "next" {
+		if unit == "days" {
+			date = startDate.AddDate(0, 0, duration).Format("2006-01-02")
+		} else if unit == "week" {
+			date = startDate.AddDate(0, 0, duration*7).Format("2006-01-02")
+		} else if unit == "month" {
+			date = startDate.AddDate(0, duration, 0).Format("2006-01-02")
+		}
+	} else if direction == "last" {
+		if unit == "days" {
+			date = startDate.AddDate(0, 0, -duration).Format("2006-01-02")
+		} else if unit == "week" {
+			date = startDate.AddDate(0, 0, -duration*7).Format("2006-01-02")
+		} else if unit == "month" {
+			date = startDate.AddDate(0, -duration, 0).Format("2006-01-02")
+		}
+	} else {
+		fmt.Println("Invalid direction")
+		return ""
+	}
+
+	return date
+}
+
 func getDurationInSeconds(start, end time.Time) int64 {
 	duration := end.Sub(start)
 	return int64(duration.Seconds())
@@ -197,9 +324,19 @@ func getTotalTime(events []Event) int64 {
 	return totalTime
 }
 
-func printEvents(events []Event, startDate, endDate time.Time) {
+func printEvents(events []Event, startDate, endDate time.Time, unit string) {
 	daysBetween := int(endDate.Sub(startDate).Hours() / 24)
-	unit := getUnit(daysBetween)
+
+	if unit == "" {
+		unit = getUnit(daysBetween)
+	} else {
+		parsedUnit, err := verifyUnit(unit, daysBetween)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		unit = parsedUnit
+	}
 
 	totalTimePerTicket := getTicketDurations(events)
 	totalTime := getTotalTime(events)

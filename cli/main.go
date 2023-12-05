@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"TimeTrack/cli/commands"
+	"TimeTrack/cli/utils"
 
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
@@ -18,6 +19,12 @@ func main() {
 	if version == "dev" {
 		fmt.Println("Running in development mode.")
 		godotenv.Load()
+	}
+
+	// Check if there is a new version of the application.
+	_, err := utils.CheckForUpdate(version, false)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	app := &cli.App{

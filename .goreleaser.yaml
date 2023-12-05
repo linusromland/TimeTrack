@@ -34,17 +34,3 @@ changelog:
         exclude:
             - '^docs:'
             - '^test:'
-# Build instructions
-# Have a .env.production file with the following contents:
-# ENVIROMENT=production
-# GOOGLE_CLIENT_ID=YOUR_PRODUCTION_GOOGLE_CLIENT_ID
-# GOOGLE_CLIENT_SECRET=YOUR_PRODUCTION_GOOGLE_CLIENT_SECRET
-
-# Run the following command:
-# git tag -a v0.0.0 -m "TAG MESSAGE"
-
-# Run the following command:
-# git push origin v0.0.0
-
-# Run the following command:
-# ./build.sh

@@ -1,5 +1,15 @@
 # TimeTrack Changelog
 
+## 0.3.1 (2023-12-03)
+
+-   Fixed bug where `list` command would not use the unit specified by the user.
+-   Added `--next` and `--last` flags to `list` command to show the next or last unit of time.
+
+## 0.3.0 (2023-12-03)
+
+-   Added automatic check for updates on startup.
+-   Added `update` command to manually check and update.
+
 ## 0.2.0 (2023-11-01)
 
 -   Added `change` command to change the current task.
