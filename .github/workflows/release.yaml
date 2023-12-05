@@ -55,6 +55,7 @@ jobs:
                   distribution: goreleaser
                   version: latest
                   args: release --rm-dist
+                  workdir: ./cli
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ENVIROMENT: production
