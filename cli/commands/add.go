@@ -1,9 +1,11 @@
 package commands
 
 import (
+	cliUtils "TimeTrack/cli/utils"
 	"TimeTrack/core/calendar"
 	"TimeTrack/core/database"
 	"TimeTrack/core/utils"
+
 	"fmt"
 	"time"
 
@@ -97,7 +99,7 @@ var AddCommand = &cli.Command{
 				return cli.Exit("End time is before start time.", 1)
 			}
 
-			event := calendar.CreateEvent(calendarId, c.String("name"), c.String("description"), startTime, endTime)
+			event := calendar.CreateEvent(cliUtils.GetCalendarService(), calendarId, c.String("name"), c.String("description"), startTime, endTime)
 			fmt.Printf("Event created with the following information:")
 			fmt.Printf("\nName: %s\n", c.String("name"))
 			if c.String("description") != "" {

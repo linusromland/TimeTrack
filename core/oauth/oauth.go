@@ -16,10 +16,8 @@ import (
 )
 
 var (
-	PRODUCTION_CLIENT_ID     string
-	PRODUCTION_CLIENT_SECRET string
-	tokenDir                 = filepath.Join(userConfigDir(), "TimeTrack")
-	tokenFile                = filepath.Join(tokenDir, "token.json")
+	tokenDir  = filepath.Join(userConfigDir(), "TimeTrack")
+	tokenFile = filepath.Join(tokenDir, "token.json")
 )
 
 func userConfigDir() string {
@@ -37,8 +35,8 @@ func ensureTokenDirExists() {
 	}
 }
 
-func GetClient() *http.Client {
-	var config = getOAuthConfig()
+func GetClient(prod_client_id string, prod_client_secret string) *http.Client {
+	var config = getOAuthConfig(prod_client_id, prod_client_secret)
 	tok, err := tokenFromFile(tokenFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
@@ -105,14 +103,14 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	return tok, err
 }
 
-func getOAuthConfig() *oauth2.Config {
+func getOAuthConfig(prod_client_id string, prod_client_secret string) *oauth2.Config {
 	CLIENT_ID := os.Getenv("GOOGLE_CLIENT_ID")
 	if CLIENT_ID == "" {
-		CLIENT_ID = PRODUCTION_CLIENT_ID
+		CLIENT_ID = prod_client_id
 	}
 	CLIENT_SECRET := os.Getenv("GOOGLE_CLIENT_SECRET")
 	if CLIENT_SECRET == "" {
-		CLIENT_SECRET = PRODUCTION_CLIENT_SECRET
+		CLIENT_SECRET = prod_client_secret
 	}
 
 	config := &oauth2.Config{

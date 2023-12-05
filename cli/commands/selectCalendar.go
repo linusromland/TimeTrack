@@ -1,6 +1,7 @@
 package commands
 
 import (
+	cliUtils "TimeTrack/cli/utils"
 	"TimeTrack/core/calendar"
 	"TimeTrack/core/database"
 	"fmt"
@@ -30,7 +31,7 @@ var SelectCalendarCommand = &cli.Command{
 
 		calendarId := c.String("calendarId")
 		if calendarId == "" {
-			calendars := calendar.GetCalendars()
+			calendars := calendar.GetCalendars(cliUtils.GetCalendarService())
 
 			app := tview.NewApplication()
 
@@ -77,7 +78,7 @@ var SelectCalendarCommand = &cli.Command{
 }
 
 func updateCalendarId(db *badger.DB, calendarId string) error {
-	calendar := calendar.GetCalendar(calendarId)
+	calendar := calendar.GetCalendar(cliUtils.GetCalendarService(), calendarId)
 
 	// Check if calendar exists
 	if calendar == nil {

@@ -6,9 +6,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 )
 
-func CreateEvent(calendarId string, title string, description string, startTime string, endTime string) *calendar.Event {
-	service := GetCalendarService()
-
+func CreateEvent(service *calendar.Service, calendarId string, title string, description string, startTime string, endTime string) *calendar.Event {
 	// Removes the timezone from the time string
 	parsedStartTime := startTime[:len(startTime)-6]
 	parsedEndTime := endTime[:len(endTime)-6]
