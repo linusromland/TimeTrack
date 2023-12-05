@@ -10,7 +10,7 @@ import (
 
 var AbortCommand = &cli.Command{
 	Name:    "abort",
-	Aliases: []string{"a"},
+	Aliases: []string{"A"},
 	Usage:   "Abort a task",
 	Action: func(c *cli.Context) error {
 		db, err := database.OpenDB()
