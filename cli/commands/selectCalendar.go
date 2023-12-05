@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
 	"fmt"
 
 	badger "github.com/dgraph-io/badger/v4"

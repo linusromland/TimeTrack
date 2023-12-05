@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"TimeTrack/src/commands"
+	"TimeTrack/cli/commands"
 
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"

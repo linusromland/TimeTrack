@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"TimeTrack/src/database"
+	"TimeTrack/core/database"
 	"fmt"
 	"time"
 

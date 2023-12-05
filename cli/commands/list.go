@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
 	"fmt"
 	"os"
 	"sort"

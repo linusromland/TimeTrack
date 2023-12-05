@@ -11,7 +11,7 @@ builds:
           - linux
           - windows
           - darwin
-      main: ./src/main.go
+      main: ./cli/main.go
       ldflags:
           - '-X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X TimeTrack/src/oauth.PRODUCTION_CLIENT_ID={{ .Env.GOOGLE_CLIENT_ID }} -X TimeTrack/src/oauth.PRODUCTION_CLIENT_SECRET={{ .Env.GOOGLE_CLIENT_SECRET }}'
 

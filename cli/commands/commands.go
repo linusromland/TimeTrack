@@ -11,5 +11,4 @@ var AllCommands = []*cli.Command{
 	ListCommand,
 	InfoCommand,
 	ChangeCommand,
-	GuiCommand,
 }

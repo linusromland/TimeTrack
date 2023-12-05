@@ -1,31 +1,37 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
 	"fmt"
 	"time"
 
 	"github.com/urfave/cli/v2"
 )
 
-var EndCommand = &cli.Command{
-	Name:    "end",
-	Aliases: []string{"e"},
-	Usage:   "End a task",
+var ChangeCommand = &cli.Command{
+	Name:    "change",
+	Aliases: []string{"c"},
+	Usage:   "End the current task and start a new one",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "description",
-			Aliases: []string{"desc", "D"},
-			Value:   "",
-			Usage:   "Description of task",
-		},
 		&cli.StringFlag{
 			Name:    "end",
 			Aliases: []string{"e"},
 			Value:   time.Now().Format("15:04"),
-			Usage:   "End time of task (format: HH:mm)",
+			Usage:   "End time of current task and start time of new task (format: HH:mm)",
+		},
+		&cli.StringFlag{
+			Name:     "name",
+			Aliases:  []string{"n"},
+			Required: true,
+			Usage:    "Name of new task",
+		},
+		&cli.StringFlag{
+			Name:    "description",
+			Aliases: []string{"desc", "D"},
+			Value:   "",
+			Usage:   "Description of the task that's ending",
 		},
 	},
 	Action: func(c *cli.Context) error {
@@ -41,30 +47,23 @@ var EndCommand = &cli.Command{
 		}
 
 		if !utils.IsValidTime(c.String("end")) {
-			return cli.Exit("Invalid end time. Please use the following format: HH:mm", 1)
+			return cli.Exit("Invalid end/start time. Please use the following format: HH:mm", 1)
 		}
 
+		// End current task
 		currentTask := database.GetData(db, "currentTask")
 		if currentTask == "" {
-			return cli.Exit("No task is currently running. Please start a task before ending it.", 1)
+			return cli.Exit("No task is currently running. Please start a task before changing it.", 1)
 		}
 
 		startTime := database.GetData(db, "currentTaskStartTime")
 		if startTime == "" {
-			return cli.Exit("No start time found for current task. Please start a task before ending it.", 1)
-		}
-
-		database.SetData(db, "currentTask", "")
-		database.SetData(db, "currentTaskStartTime", "")
-
-		parsedStartTime, _ := time.Parse(time.RFC3339, startTime)
-		// if starttime is less than 1 minute ago, exit with error
-		if parsedStartTime.Add(time.Minute * 1).After(time.Now()) {
-			return cli.Exit("Task started less than 1 minute ago. Please wait at least 1 minute before ending the task.", 1)
+			return cli.Exit("No start time found for current task. Please start a task before changing it.", 1)
 		}
 
 		endTime := fmt.Sprintf("%sT%s:00+02:00", time.Now().Format("2006-01-02"), c.String("end"))
 		parsedEndTime, _ := time.Parse(time.RFC3339, endTime)
+		parsedStartTime, _ := time.Parse(time.RFC3339, startTime)
 
 		event := calendar.CreateEvent(calendarId, currentTask, c.String("description"), startTime, endTime)
 
@@ -76,6 +75,12 @@ var EndCommand = &cli.Command{
 		}
 		fmt.Printf("Duration: %dh %dm\n", hours, minutes)
 		fmt.Printf("Event created: %s\n", event.HtmlLink)
+
+		// Start new task
+		database.SetData(db, "currentTask", c.String("name"))
+		database.SetData(db, "currentTaskStartTime", endTime)
+
+		fmt.Printf("Started new task '%s' at %s\n", c.String("name"), parsedEndTime.Format("2006-01-02 15:04"))
 		return nil
 	},
 }
