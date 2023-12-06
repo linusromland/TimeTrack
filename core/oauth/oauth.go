@@ -113,6 +113,9 @@ func getOAuthConfig(prod_client_id string, prod_client_secret string) *oauth2.Co
 		CLIENT_SECRET = prod_client_secret
 	}
 
+	fmt.Println("Client ID:", CLIENT_ID)
+	fmt.Println("Client secret:", CLIENT_SECRET)
+
 	config := &oauth2.Config{
 		ClientID:     CLIENT_ID,
 		ClientSecret: CLIENT_SECRET,
