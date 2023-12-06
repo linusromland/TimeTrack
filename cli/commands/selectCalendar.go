@@ -33,7 +33,8 @@ var SelectCalendarCommand = &cli.Command{
 
 		calendarId := c.String("calendarId")
 		if calendarId == "" {
-			calendars := calendar.GetCalendars(oauth.GetCalendarService())
+			calendarService := oauth.GetCalendarService()
+			calendars := calendar.GetCalendars(calendarService)
 
 			app := tview.NewApplication()
 
