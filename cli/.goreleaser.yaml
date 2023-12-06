@@ -13,7 +13,7 @@ builds:
           - darwin
       main: ./main.go
       ldflags:
-          - '-X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X TimeTrack/cli/utils.PRODUCTION_CLIENT_ID={{ .Env.GOOGLE_CLIENT_ID }} -X TimeTrack/cli/utils.PRODUCTION_CLIENT_SECRET={{ .Env.GOOGLE_CLIENT_SECRET }}'
+          - '-X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X TimeTrack/cli/oauth.PRODUCTION_CLIENT_ID={{ .Env.GOOGLE_CLIENT_ID }} -X TimeTrack/cli/oauth.PRODUCTION_CLIENT_SECRET={{ .Env.GOOGLE_CLIENT_SECRET }}'
 
 archives:
     - format: tar.gz
