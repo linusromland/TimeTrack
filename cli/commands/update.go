@@ -1,6 +1,7 @@
 package commands
 
 import (
+	cliUtils "TimeTrack/cli/utils"
 	"TimeTrack/core/utils"
 	"fmt"
 
@@ -13,12 +14,22 @@ var UpdateCommand = &cli.Command{
 	Usage:   "update the application",
 	Action: func(c *cli.Context) error {
 		version := c.App.Version
-		newVersion, err := utils.CheckForUpdate(version, true)
+		updateAvailable, err := utils.CheckForUpdate(version)
 
 		if err != nil {
 			return err
-		} else if !newVersion {
+		}
+
+		if updateAvailable == "" {
 			fmt.Println("You are already running the latest version. The current version is:", version)
+			return nil
+		}
+
+		if cliUtils.Confirm("Do you want to update?") {
+			err = utils.UpdateVersion(updateAvailable)
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 
 		return nil
