@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"TimeTrack/cli/oauth"
-
 	"TimeTrack/core/calendar"
 	"TimeTrack/core/database"
 	"TimeTrack/core/utils"
@@ -68,7 +66,7 @@ var ChangeCommand = &cli.Command{
 		parsedEndTime, _ := time.Parse(time.RFC3339, endTime)
 		parsedStartTime, _ := time.Parse(time.RFC3339, startTime)
 
-		event := calendar.CreateEvent(oauth.GetCalendarService(), calendarId, currentTask, c.String("description"), startTime, endTime)
+		event := calendar.CreateEvent(calendarId, currentTask, c.String("description"), startTime, endTime)
 
 		hours, minutes := utils.GetTaskTime(parsedStartTime, parsedEndTime)
 

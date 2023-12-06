@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"TimeTrack/cli/oauth"
-
 	"TimeTrack/core/calendar"
 	"TimeTrack/core/database"
 	"TimeTrack/core/utils"
@@ -141,7 +139,7 @@ var ListCommand = &cli.Command{
 			return nil
 		}
 
-		events := calendar.GetEvents(oauth.GetCalendarService(), calendarId, startTime, endTime)
+		events := calendar.GetEvents(calendarId, startTime, endTime)
 
 		if len(events.Items) == 0 {
 			fmt.Println("No events found.")

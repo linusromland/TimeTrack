@@ -2,7 +2,8 @@ package calendar
 
 import "google.golang.org/api/calendar/v3"
 
-func GetEvents(service *calendar.Service, calendarId string, startTime string, endTime string) *calendar.Events {
+func GetEvents(calendarId string, startTime string, endTime string) *calendar.Events {
+	service := GetCalendarService()
 	events, err := service.Events.List(calendarId).ShowDeleted(false).
 		SingleEvents(true).TimeMin(startTime).TimeMax(endTime).OrderBy("startTime").MaxResults(2500).Do()
 
