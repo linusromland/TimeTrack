@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"TimeTrack/core/database"
+
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,8 +12,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-
-	"TimeTrack/core/database"
 )
 
 func parseVersion(version string) int {

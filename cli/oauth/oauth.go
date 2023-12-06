@@ -1,9 +1,8 @@
-package utils
+package oauth
 
 import (
-	"TimeTrack/core/oauth"
-
 	coreCalendar "TimeTrack/core/calendar"
+	"TimeTrack/core/oauth"
 
 	"google.golang.org/api/calendar/v3"
 )

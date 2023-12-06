@@ -1,9 +1,11 @@
 package commands
 
 import (
-	cliUtils "TimeTrack/cli/utils"
+	"TimeTrack/cli/oauth"
+
 	"TimeTrack/core/calendar"
 	"TimeTrack/core/database"
+
 	"fmt"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -31,7 +33,7 @@ var SelectCalendarCommand = &cli.Command{
 
 		calendarId := c.String("calendarId")
 		if calendarId == "" {
-			calendars := calendar.GetCalendars(cliUtils.GetCalendarService())
+			calendars := calendar.GetCalendars(oauth.GetCalendarService())
 
 			app := tview.NewApplication()
 
@@ -78,7 +80,7 @@ var SelectCalendarCommand = &cli.Command{
 }
 
 func updateCalendarId(db *badger.DB, calendarId string) error {
-	calendar := calendar.GetCalendar(cliUtils.GetCalendarService(), calendarId)
+	calendar := calendar.GetCalendar(oauth.GetCalendarService(), calendarId)
 
 	// Check if calendar exists
 	if calendar == nil {

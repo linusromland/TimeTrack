@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"TimeTrack/cli/commands"
 	cliUtils "TimeTrack/cli/utils"
+
 	"TimeTrack/core/database"
 	"TimeTrack/core/utils"
+
+	"fmt"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
