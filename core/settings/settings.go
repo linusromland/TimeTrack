@@ -2,7 +2,10 @@ package settings
 
 import (
 	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
 	"fmt"
+
+	badger "github.com/dgraph-io/badger/v4"
 )
 
 type Option struct {
@@ -30,7 +33,7 @@ var categorySettings = map[string]string{
 	"Cloud Sync": "cloudSync",
 }
 
-func GetSettings() []SettingCategory {
+func getSettings(db *badger.DB) []SettingCategory {
 	calendars := calendar.GetCalendars()
 	availableCalendars := []Option{}
 
@@ -46,19 +49,23 @@ func GetSettings() []SettingCategory {
 				{
 					Id:      "calendar",
 					Type:    "select",
-					Label:   "Selected Calendar",
+					Label:   "Select Calendar",
 					Options: availableCalendars,
 					GetValue: func(value string) (string, string) {
-						for _, cal := range availableCalendars {
-							if cal.Value == value {
-								return cal.Value, cal.Label
+						if value == "" {
+							value = database.GetData(db, "calendarId")
+						}
+
+						for _, calendar := range availableCalendars {
+							if calendar.Value == value {
+								return calendar.Value, calendar.Label
 							}
 						}
 
 						return "", ""
 					},
 					SetValue: func(value string) {
-						fmt.Printf("Set calendar to %s\n", value)
+						database.SetData(db, "calendarId", value)
 					},
 				},
 			},
@@ -107,8 +114,8 @@ func GetSettings() []SettingCategory {
 	return settings
 }
 
-func getSettingCategory(id string) SettingCategory {
-	settings := GetSettings()
+func getSettingCategory(db *badger.DB, id string) SettingCategory {
+	settings := getSettings(db)
 
 	for _, settingCategory := range settings {
 		if settingCategory.Id == id {
@@ -119,11 +126,11 @@ func getSettingCategory(id string) SettingCategory {
 	return SettingCategory{}
 }
 
-func GetSettingsByCategory(category string) []Setting {
+func GetSettingsByCategory(db *badger.DB, category string) []Setting {
 	// get the settingsCategory from the map
 	settingsCategoryId := categorySettings[category]
 
-	settingCategory := getSettingCategory(settingsCategoryId)
+	settingCategory := getSettingCategory(db, settingsCategoryId)
 
 	return settingCategory.Settings
 }

@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"TimeTrack/core/database"
 	"TimeTrack/core/settings"
 
+	"github.com/dgraph-io/badger/v4"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/urfave/cli/v2"
@@ -13,17 +15,24 @@ var SettingsCommand = &cli.Command{
 	Usage: "Manage application settings",
 	Action: func(c *cli.Context) error {
 		app := tview.NewApplication()
-		mainList := createMainList(app)
+
+		db, err := database.OpenDB()
+		if err != nil {
+			panic(err)
+		}
+
+		mainList := createMainList(app, db)
 
 		if err := app.SetRoot(mainList, true).Run(); err != nil {
 			panic(err)
 		}
 
+		database.CloseDB(db)
 		return nil
 	},
 }
 
-func createMainList(app *tview.Application) *tview.List {
+func createMainList(app *tview.Application, db *badger.DB) *tview.List {
 	mainList := tview.NewList()
 
 	mainList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" Settings ").SetTitleAlign(tview.AlignLeft)
@@ -33,27 +42,33 @@ func createMainList(app *tview.Application) *tview.List {
 	mainList.AddItem("Exit", "", 'e', func() {
 		app.Stop()
 	})
+	mainList.ShowSecondaryText(false)
 
 	mainList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
 		if mainText == "Exit" {
 			app.Stop()
 			return
 		}
-		showSettingsForCategory(app, mainList, mainText)
+
+		showSettingsForCategory(app, mainList, mainText, db)
 	})
 
 	return mainList
 }
 
-func showSettingsForCategory(app *tview.Application, mainList *tview.List, category string) {
+func showSettingsForCategory(app *tview.Application, mainList *tview.List, category string, db *badger.DB) {
 	settingsList := tview.NewList()
 
 	settingsList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + category + " ").SetTitleAlign(tview.AlignLeft)
 
-	settings := settings.GetSettingsByCategory(category)
+	settings := settings.GetSettingsByCategory(db, category)
 
 	for _, setting := range settings {
 		_, settingLabel := setting.GetValue("")
+
+		if settingLabel == "" {
+			settingLabel = "Not set"
+		}
 
 		valueLabel := "Current value: " + settingLabel
 
@@ -96,7 +111,6 @@ func editSetting(app *tview.Application, mainList *tview.List, setting settings.
 		form.AddInputField(setting.Label, "", 0, nil, nil)
 	case "number":
 		form.AddInputField(setting.Label, "", 0, nil, nil)
-
 	case "checkbox":
 		form.AddCheckbox(setting.Label, false, nil)
 	default:
@@ -134,7 +148,21 @@ func editSelectSetting(app *tview.Application, mainList *tview.List, setting set
 		})
 	}
 
+	selectList.ShowSecondaryText(false)
+
 	selectList.AddItem("Back", "", 'b', func() {
+		app.SetRoot(mainList, true)
+	})
+
+	selectList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		if mainText == "Back" {
+			app.SetRoot(mainList, true)
+			return
+		}
+
+		option := setting.Options[index]
+
+		setting.SetValue(option.Value)
 		app.SetRoot(mainList, true)
 	})
 

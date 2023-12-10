@@ -39,12 +39,12 @@ func ensureTokenDirExists() {
 
 func GetClient() *http.Client {
 	var config = getOAuthConfig()
-	tok, err := tokenFromFile(tokenFile)
+	token, err := tokenFromFile(tokenFile)
 	if err != nil {
-		tok = getTokenFromWeb(config)
-		saveToken(tokenFile, tok)
+		token = getTokenFromWeb(config)
+		saveToken(tokenFile, token)
 	}
-	return config.Client(context.Background(), tok)
+	return config.Client(context.Background(), token)
 }
 
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
@@ -106,8 +106,6 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 }
 
 func getOAuthConfig() *oauth2.Config {
-	fmt.Print("PRODUCTION_CLIENT_ID: ", PRODUCTION_CLIENT_ID)
-	fmt.Print("PRODUCTION_CLIENT_SECRET: ", PRODUCTION_CLIENT_SECRET)
 	CLIENT_ID := os.Getenv("GOOGLE_CLIENT_ID")
 	if CLIENT_ID == "" {
 		CLIENT_ID = PRODUCTION_CLIENT_ID
@@ -126,6 +124,7 @@ func getOAuthConfig() *oauth2.Config {
 		},
 		Endpoint: google.Endpoint,
 	}
+
 	return config
 }
 
