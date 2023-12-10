@@ -1,64 +1,129 @@
 package settings
 
 import (
-	"errors"
+	"TimeTrack/core/calendar"
 	"fmt"
-	"reflect"
-	"strconv"
-	"strings"
 )
 
-type Settings struct {
-	CalendarID string
+type Option struct {
+	Value string
+	Label string
 }
 
-func getSettings() *Settings {
-	// TODO: get settings from database
-	return &Settings{}
+type Setting struct {
+	Id       string
+	Type     string
+	Label    string
+	Options  []Option                            // For selects
+	GetValue func(value string) (string, string) // Returns value and label. value is used for selects, for all others, leave blank
+	SetValue func(string)                        // Sets value
 }
 
-func getSetting(settingPath string) (interface{}, error) {
-	settings := getSettings()
+type SettingCategory struct {
+	Id       string
+	Label    string
+	Settings []Setting
+}
 
-	pathParts := strings.Split(settingPath, ".")
-	val := reflect.ValueOf(settings).Elem()
+var categorySettings = map[string]string{
+	"Calendar":   "calendar",
+	"Cloud Sync": "cloudSync",
+}
 
-	for _, part := range pathParts {
-		// If it's an array, handle indexing
-		if idx := strings.Index(part, "["); idx != -1 {
-			arrayIndex, err := strconv.Atoi(part[idx+1 : len(part)-1])
-			if err != nil {
-				return nil, fmt.Errorf("invalid array index in %s", part)
-			}
-			part = part[:idx]
+func GetSettings() []SettingCategory {
+	calendars := calendar.GetCalendars()
+	availableCalendars := []Option{}
 
-			val = val.FieldByName(part)
-			if !val.IsValid() {
-				return nil, fmt.Errorf("setting %s does not exist", part)
-			}
-			if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
-				return nil, fmt.Errorf("%s is not an array", part)
-			}
-			if arrayIndex >= val.Len() {
-				return nil, fmt.Errorf("index out of range in %s", part)
-			}
-			val = val.Index(arrayIndex)
-		} else {
-			val = val.FieldByName(part)
-			if !val.IsValid() {
-				return nil, fmt.Errorf("setting %s does not exist", part)
-			}
+	for _, cal := range calendars.Items {
+		availableCalendars = append(availableCalendars, Option{Value: cal.Id, Label: cal.Summary})
+	}
+
+	settings := []SettingCategory{
+		{
+			Id:    "calendar",
+			Label: "Calendar",
+			Settings: []Setting{
+				{
+					Id:      "calendar",
+					Type:    "select",
+					Label:   "Selected Calendar",
+					Options: availableCalendars,
+					GetValue: func(value string) (string, string) {
+						for _, cal := range availableCalendars {
+							if cal.Value == value {
+								return cal.Value, cal.Label
+							}
+						}
+
+						return "", ""
+					},
+					SetValue: func(value string) {
+						fmt.Printf("Set calendar to %s\n", value)
+					},
+				},
+			},
+		},
+		{
+			Id:    "cloudSync",
+			Label: "Cloud Sync",
+			Settings: []Setting{
+				{
+					Id:    "enabled",
+					Type:  "checkbox",
+					Label: "Cloud Sync Enabled",
+					GetValue: func(_ string) (string, string) {
+						return "true", "Enabled"
+					},
+					SetValue: func(value string) {
+						fmt.Printf("Set enabled to %s\n", value)
+					},
+				},
+				{
+					Id:    "url",
+					Type:  "text",
+					Label: "Cloud Sync URL",
+					GetValue: func(_ string) (string, string) {
+						return "https://example.com", "https://example.com"
+					},
+					SetValue: func(value string) {
+						fmt.Printf("Set url to %s\n", value)
+					},
+				},
+				{
+					Id:    "interval",
+					Type:  "number",
+					Label: "Sync Interval",
+					GetValue: func(_ string) (string, string) {
+						return "0", "Every time"
+					},
+					SetValue: func(value string) {
+						fmt.Printf("Set interval to %s\n", value)
+					},
+				},
+			},
+		},
+	}
+
+	return settings
+}
+
+func getSettingCategory(id string) SettingCategory {
+	settings := GetSettings()
+
+	for _, settingCategory := range settings {
+		if settingCategory.Id == id {
+			return settingCategory
 		}
 	}
 
-	switch val.Kind() {
-	case reflect.String:
-		return val.String(), nil
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return val.Int(), nil
-	case reflect.Bool:
-		return val.Bool(), nil
-	default:
-		return nil, errors.New("unsupported type")
-	}
+	return SettingCategory{}
+}
+
+func GetSettingsByCategory(category string) []Setting {
+	// get the settingsCategory from the map
+	settingsCategoryId := categorySettings[category]
+
+	settingCategory := getSettingCategory(settingsCategoryId)
+
+	return settingCategory.Settings
 }

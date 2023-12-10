@@ -3,7 +3,6 @@ package main
 import (
 	"TimeTrack/cli/commands"
 	cliUtils "TimeTrack/cli/utils"
-
 	"TimeTrack/core/database"
 	"TimeTrack/core/utils"
 

@@ -1,96 +1,12 @@
 package commands
 
 import (
-	"fmt"
+	"TimeTrack/core/settings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/urfave/cli/v2"
 )
-
-type Setting struct {
-	Id       string
-	Type     string
-	Label    string
-	Options  []string                            // For selects
-	GetValue func(value string) (string, string) // Returns value and label. value is used for selects, for all others, leave blank
-	SetValue func(string)                        // Sets value
-}
-
-type SettingCategory struct {
-	Id       string
-	Label    string
-	Settings []Setting
-}
-
-var settings = []SettingCategory{
-	{
-		Id:    "calendar",
-		Label: "Calendar",
-		Settings: []Setting{
-			{
-				Id:      "calendar",
-				Type:    "select",
-				Label:   "Selected Calendar",
-				Options: []string{"123", "234"},
-				GetValue: func(value string) (string, string) {
-					if value == "123" {
-						return "123Value0", "123Label0"
-					} else {
-						return "234Value0", "234Label0"
-					}
-				},
-				SetValue: func(value string) {
-					fmt.Printf("Set calendar to %s\n", value)
-				},
-			},
-		},
-	},
-	{
-		Id:    "cloudSync",
-		Label: "Cloud Sync",
-		Settings: []Setting{
-			{
-				Id:    "enabled",
-				Type:  "checkbox",
-				Label: "Cloud Sync Enabled",
-				GetValue: func(_ string) (string, string) {
-					return "true", "Enabled"
-				},
-				SetValue: func(value string) {
-					fmt.Printf("Set enabled to %s\n", value)
-				},
-			},
-			{
-				Id:    "url",
-				Type:  "text",
-				Label: "Cloud Sync URL",
-				GetValue: func(_ string) (string, string) {
-					return "https://example.com", "https://example.com"
-				},
-				SetValue: func(value string) {
-					fmt.Printf("Set url to %s\n", value)
-				},
-			},
-			{
-				Id:    "interval",
-				Type:  "number",
-				Label: "Sync Interval",
-				GetValue: func(_ string) (string, string) {
-					return "0", "Every time"
-				},
-				SetValue: func(value string) {
-					fmt.Printf("Set interval to %s\n", value)
-				},
-			},
-		},
-	},
-}
-
-var categorySettings = map[string]string{
-	"Calendar":   "calendar",
-	"Cloud Sync": "cloudSync",
-}
 
 var SettingsCommand = &cli.Command{
 	Name:  "settings",
@@ -105,25 +21,6 @@ var SettingsCommand = &cli.Command{
 
 		return nil
 	},
-}
-
-func getSettingCategory(id string) SettingCategory {
-	for _, settingCategory := range settings {
-		if settingCategory.Id == id {
-			return settingCategory
-		}
-	}
-
-	return SettingCategory{}
-}
-
-func GetSettingsByCategory(category string) []Setting {
-	// get the settingsCategory from the map
-	settingsCategoryId := categorySettings[category]
-
-	settingCategory := getSettingCategory(settingsCategoryId)
-
-	return settingCategory.Settings
 }
 
 func createMainList(app *tview.Application) *tview.List {
@@ -153,7 +50,7 @@ func showSettingsForCategory(app *tview.Application, mainList *tview.List, categ
 
 	settingsList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + category + " ").SetTitleAlign(tview.AlignLeft)
 
-	settings := GetSettingsByCategory(category)
+	settings := settings.GetSettingsByCategory(category)
 
 	for _, setting := range settings {
 		_, settingLabel := setting.GetValue("")
@@ -182,7 +79,7 @@ func showSettingsForCategory(app *tview.Application, mainList *tview.List, categ
 	app.SetRoot(settingsList, true)
 }
 
-func editSetting(app *tview.Application, mainList *tview.List, setting Setting) {
+func editSetting(app *tview.Application, mainList *tview.List, setting settings.Setting) {
 	settingType := setting.Type // text, number, checkbox, select
 
 	if settingType == "select" {
@@ -217,7 +114,7 @@ func editSetting(app *tview.Application, mainList *tview.List, setting Setting) 
 	app.SetRoot(form, true)
 }
 
-func editSelectSetting(app *tview.Application, mainList *tview.List, setting Setting) {
+func editSelectSetting(app *tview.Application, mainList *tview.List, setting settings.Setting) {
 	selectList := tview.NewList()
 
 	if setting.Type != "select" {
@@ -231,10 +128,8 @@ func editSelectSetting(app *tview.Application, mainList *tview.List, setting Set
 	selectList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + setting.Label + " ").SetTitleAlign(tview.AlignLeft)
 
 	for _, option := range setting.Options {
-		value, label := setting.GetValue(option)
-
-		selectList.AddItem(label, "", 0, func() {
-			setting.SetValue(value)
+		selectList.AddItem(option.Label, option.Value, 0, func() {
+			setting.SetValue(option.Value)
 			app.SetRoot(mainList, true)
 		})
 	}
