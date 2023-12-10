@@ -52,7 +52,7 @@ func checkForUpdate() {
 		fmt.Printf("There is a new version of TimeTrack available: %s\n", updateAvailable)
 
 		// Check if the user has skipped this update.
-		skipUpdate := database.GetData(db, database.SKIP_DB_KEY)
+		skipUpdate := database.GetData(db, database.SKIP_UPDATE)
 		if skipUpdate == updateAvailable {
 			if cliUtils.Confirm("Do you want to update?") {
 				err = utils.UpdateVersion(updateAvailable)
@@ -61,7 +61,7 @@ func checkForUpdate() {
 				}
 			} else {
 				fmt.Println("Skipping this update, you can update later by running 'timetrack update'.")
-				database.SetData(db, database.SKIP_DB_KEY, updateAvailable)
+				database.SetData(db, database.SKIP_UPDATE, updateAvailable)
 			}
 		}
 		database.CloseDB(db)
