@@ -35,7 +35,7 @@ var EndCommand = &cli.Command{
 			fmt.Println(err)
 			return nil
 		}
-		calendarId := database.GetData(db, "calendarId")
+		calendarId := database.GetData(db, database.CALENDAR_ID)
 		if calendarId == "" {
 			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
 			return nil
@@ -45,18 +45,18 @@ var EndCommand = &cli.Command{
 			return cli.Exit("Invalid end time. Please use the following format: HH:mm", 1)
 		}
 
-		currentTask := database.GetData(db, "currentTask")
+		currentTask := database.GetData(db, database.CURRENT_TASK)
 		if currentTask == "" {
 			return cli.Exit("No task is currently running. Please start a task before ending it.", 1)
 		}
 
-		startTime := database.GetData(db, "currentTaskStartTime")
+		startTime := database.GetData(db, database.CURRENT_TASK_START_TIME)
 		if startTime == "" {
 			return cli.Exit("No start time found for current task. Please start a task before ending it.", 1)
 		}
 
-		database.SetData(db, "currentTask", "")
-		database.SetData(db, "currentTaskStartTime", "")
+		database.SetData(db, database.CURRENT_TASK, "")
+		database.SetData(db, database.CURRENT_TASK_START_TIME, "")
 
 		parsedStartTime, _ := time.Parse(time.RFC3339, startTime)
 		// if starttime is less than 1 minute ago, exit with error

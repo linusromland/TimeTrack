@@ -53,7 +53,7 @@ func getSettings(db *badger.DB) []SettingCategory {
 					Options: availableCalendars,
 					GetValue: func(value string) (string, string) {
 						if value == "" {
-							value = database.GetData(db, "calendarId")
+							value = database.GetData(db, database.CALENDAR_ID)
 						}
 
 						for _, calendar := range availableCalendars {
@@ -65,7 +65,7 @@ func getSettings(db *badger.DB) []SettingCategory {
 						return "", ""
 					},
 					SetValue: func(value string) {
-						database.SetData(db, "calendarId", value)
+						database.SetData(db, database.CALENDAR_ID, value)
 					},
 				},
 			},

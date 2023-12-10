@@ -87,7 +87,7 @@ func updateCalendarId(db *badger.DB, calendarId string) error {
 	}
 
 	// Save calendar ID to database
-	err := database.SetData(db, "calendarId", calendarId)
+	err := database.SetData(db, database.CALENDAR_ID, calendarId)
 	if err != nil {
 		fmt.Println(err)
 	} else {

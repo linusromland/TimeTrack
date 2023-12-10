@@ -21,12 +21,12 @@ var InfoCommand = &cli.Command{
 			return nil
 		}
 
-		currentTask := database.GetData(db, "currentTask")
+		currentTask := database.GetData(db, database.CURRENT_TASK)
 		if currentTask == "" {
 			return cli.Exit("No task is currently running. Please start a task to see info about it.", 1)
 		}
 
-		startTime := database.GetData(db, "currentTaskStartTime")
+		startTime := database.GetData(db, database.CURRENT_TASK_START_TIME)
 		if startTime == "" {
 			return cli.Exit("No start time found for current task. Please start a task to see info about it.", 1)
 		}
