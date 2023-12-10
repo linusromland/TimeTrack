@@ -12,8 +12,8 @@ type Setting struct {
 	Id       string
 	Type     string
 	Label    string
-	Options  []string                            // For dropdowns
-	GetValue func(value string) (string, string) // Returns value and label. value is used for dropdowns, for all others, leave blank
+	Options  []string                            // For selects
+	GetValue func(value string) (string, string) // Returns value and label. value is used for selects, for all others, leave blank
 	SetValue func(string)                        // Sets value
 }
 
@@ -30,7 +30,7 @@ var settings = []SettingCategory{
 		Settings: []Setting{
 			{
 				Id:      "calendar",
-				Type:    "dropdown",
+				Type:    "select",
 				Label:   "Selected Calendar",
 				Options: []string{"123", "234"},
 				GetValue: func(value string) (string, string) {
@@ -92,6 +92,21 @@ var categorySettings = map[string]string{
 	"Cloud Sync": "cloudSync",
 }
 
+var SettingsCommand = &cli.Command{
+	Name:  "settings",
+	Usage: "Manage application settings",
+	Action: func(c *cli.Context) error {
+		app := tview.NewApplication()
+		mainList := createMainList(app)
+
+		if err := app.SetRoot(mainList, true).Run(); err != nil {
+			panic(err)
+		}
+
+		return nil
+	},
+}
+
 func getSettingCategory(id string) SettingCategory {
 	for _, settingCategory := range settings {
 		if settingCategory.Id == id {
@@ -111,27 +126,10 @@ func GetSettingsByCategory(category string) []Setting {
 	return settingCategory.Settings
 }
 
-var SettingsCommand = &cli.Command{
-	Name:  "settings",
-	Usage: "Manage application settings",
-	Action: func(c *cli.Context) error {
-		app := tview.NewApplication()
-		mainList := createMainList(app)
-
-		if err := app.SetRoot(mainList, true).Run(); err != nil {
-			panic(err)
-		}
-
-		return nil
-	},
-}
-
 func createMainList(app *tview.Application) *tview.List {
 	mainList := tview.NewList()
 
 	mainList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" Settings ").SetTitleAlign(tview.AlignLeft)
-
-	// Set margin/padding between items
 
 	mainList.AddItem("Calendar", "", 0, nil)
 	mainList.AddItem("Cloud Sync", "", 0, nil)
@@ -155,16 +153,27 @@ func showSettingsForCategory(app *tview.Application, mainList *tview.List, categ
 
 	settingsList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + category + " ").SetTitleAlign(tview.AlignLeft)
 
-	for _, setting := range GetSettingsByCategory(category) {
+	settings := GetSettingsByCategory(category)
+
+	for _, setting := range settings {
 		_, settingLabel := setting.GetValue("")
 
 		valueLabel := "Current value: " + settingLabel
 
-		settingsList.AddItem(setting.Label, valueLabel, 0, func() {
-			editSetting(app, mainList, setting)
-		})
+		settingsList.AddItem(setting.Label, valueLabel, 0, nil)
 		settingsList.SetSecondaryTextColor(tcell.ColorGrey)
 	}
+
+	settingsList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		if mainText == "Back" {
+			app.SetRoot(mainList, true)
+			return
+		}
+
+		setting := settings[index]
+
+		editSetting(app, mainList, setting)
+	})
 
 	settingsList.AddItem("Back", "", 'b', func() {
 		app.SetRoot(mainList, true)
@@ -174,29 +183,28 @@ func showSettingsForCategory(app *tview.Application, mainList *tview.List, categ
 }
 
 func editSetting(app *tview.Application, mainList *tview.List, setting Setting) {
-	settingType := setting.Type // text, number, checkbox, dropdown
+	settingType := setting.Type // text, number, checkbox, select
 
-	switch settingType {
-	case "text":
-		editTextSetting(app, mainList, setting)
-	// case "number":
-	// 	editNumberSetting(app, mainList, setting)
-	// case "checkbox":
-	// 	editCheckboxSetting(app, mainList, setting)
-	// case "dropdown":
-	// 	editDropdownSetting(app, mainList, setting)
-	// }
-	default:
-		panic("Unknown setting type: " + settingType)
+	if settingType == "select" {
+		editSelectSetting(app, mainList, setting)
+		return
 	}
-}
 
-func editTextSetting(app *tview.Application, mainList *tview.List, setting Setting) {
 	form := tview.NewForm()
 
 	form.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + setting.Label + " ").SetTitleAlign(tview.AlignLeft)
 
-	form.AddInputField(setting.Label, "", 0, nil, nil)
+	switch settingType {
+	case "text":
+		form.AddInputField(setting.Label, "", 0, nil, nil)
+	case "number":
+		form.AddInputField(setting.Label, "", 0, nil, nil)
+
+	case "checkbox":
+		form.AddCheckbox(setting.Label, false, nil)
+	default:
+		panic("Unknown setting type: " + settingType)
+	}
 
 	form.AddButton("Save", func() {
 		app.SetRoot(mainList, true)
@@ -207,4 +215,33 @@ func editTextSetting(app *tview.Application, mainList *tview.List, setting Setti
 	})
 
 	app.SetRoot(form, true)
+}
+
+func editSelectSetting(app *tview.Application, mainList *tview.List, setting Setting) {
+	selectList := tview.NewList()
+
+	if setting.Type != "select" {
+		panic("editSelectSetting called with non-select setting")
+	}
+
+	if len(setting.Options) == 0 {
+		panic("editSelectSetting called with setting with no options")
+	}
+
+	selectList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + setting.Label + " ").SetTitleAlign(tview.AlignLeft)
+
+	for _, option := range setting.Options {
+		value, label := setting.GetValue(option)
+
+		selectList.AddItem(label, "", 0, func() {
+			setting.SetValue(value)
+			app.SetRoot(mainList, true)
+		})
+	}
+
+	selectList.AddItem("Back", "", 'b', func() {
+		app.SetRoot(mainList, true)
+	})
+
+	app.SetRoot(selectList, true)
 }
