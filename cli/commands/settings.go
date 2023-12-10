@@ -3,6 +3,7 @@ package commands
 import (
 	"TimeTrack/core/database"
 	"TimeTrack/core/settings"
+	"strconv"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/gdamore/tcell/v2"
@@ -106,18 +107,58 @@ func editSetting(app *tview.Application, mainList *tview.List, setting settings.
 
 	form.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" " + setting.Label + " ").SetTitleAlign(tview.AlignLeft)
 
+	settingValue, _ := setting.GetValue("")
+
+	textValue := ""
+	numberValue := 0
+	booleanValue := false
+
 	switch settingType {
 	case "text":
-		form.AddInputField(setting.Label, "", 0, nil, nil)
+		textValue = settingValue
+		form.AddInputField(setting.Label, settingValue, 0, nil, func(text string) {
+			textValue = text
+		})
 	case "number":
-		form.AddInputField(setting.Label, "", 0, nil, nil)
+		if settingValue != "" {
+			numberValue = parseInt(settingValue)
+		}
+		form.AddInputField(setting.Label, settingValue, 0, func(textToCheck string, lastChar rune) bool {
+			if textToCheck == "" {
+				return true
+			}
+
+			_, err := strconv.Atoi(textToCheck)
+
+			return err == nil
+		}, func(text string) {
+			if text == "" {
+				numberValue = 0
+				return
+			}
+
+			numberValue = parseInt(text)
+		})
 	case "checkbox":
-		form.AddCheckbox(setting.Label, false, nil)
+		booleanValue = parseBool(settingValue)
+		form.AddCheckbox(setting.Label, booleanValue, func(checked bool) {
+			booleanValue = checked
+		})
 	default:
 		panic("Unknown setting type: " + settingType)
 	}
 
 	form.AddButton("Save", func() {
+		switch settingType {
+		case "text":
+			setting.SetValue(textValue)
+		case "number":
+			setting.SetValue(strconv.Itoa(numberValue))
+		case "checkbox":
+			setting.SetValue(strconv.FormatBool(booleanValue))
+		default:
+			panic("Unknown setting type: " + settingType)
+		}
 		app.SetRoot(mainList, true)
 	})
 
@@ -126,6 +167,20 @@ func editSetting(app *tview.Application, mainList *tview.List, setting settings.
 	})
 
 	app.SetRoot(form, true)
+}
+
+func parseInt(value string) int {
+	intValue, err := strconv.Atoi(value)
+
+	if err != nil {
+		panic(err)
+	} else {
+		return intValue
+	}
+}
+
+func parseBool(value string) bool {
+	return value == "true"
 }
 
 func editSelectSetting(app *tview.Application, mainList *tview.List, setting settings.Setting) {

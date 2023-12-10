@@ -79,10 +79,17 @@ func getSettings(db *badger.DB) []SettingCategory {
 					Type:  "checkbox",
 					Label: "Cloud Sync Enabled",
 					GetValue: func(_ string) (string, string) {
-						return "true", "Enabled"
+						value := database.GetData(db, database.CLOUD_SYNC_ENABLED)
+
+						label := "Disabled"
+						if value == "true" {
+							label = "Enabled"
+						}
+
+						return value, label
 					},
 					SetValue: func(value string) {
-						fmt.Printf("Set enabled to %s\n", value)
+						database.SetData(db, database.CLOUD_SYNC_ENABLED, value)
 					},
 				},
 				{
@@ -90,10 +97,12 @@ func getSettings(db *badger.DB) []SettingCategory {
 					Type:  "text",
 					Label: "Cloud Sync URL",
 					GetValue: func(_ string) (string, string) {
-						return "https://example.com", "https://example.com"
+						value := database.GetData(db, database.CLOUD_SYNC_URL)
+
+						return value, value
 					},
 					SetValue: func(value string) {
-						fmt.Printf("Set url to %s\n", value)
+						database.SetData(db, database.CLOUD_SYNC_URL, value)
 					},
 				},
 				{
@@ -101,10 +110,21 @@ func getSettings(db *badger.DB) []SettingCategory {
 					Type:  "number",
 					Label: "Sync Interval",
 					GetValue: func(_ string) (string, string) {
-						return "0", "Every time"
+						value := database.GetData(db, database.CLOUD_SYNC_INTERVAL)
+
+						if value == "" {
+							return "", ""
+						}
+
+						label := "Every time"
+						if value != "0" {
+							label = fmt.Sprintf("Every %s hour(s)", value)
+						}
+
+						return value, label
 					},
 					SetValue: func(value string) {
-						fmt.Printf("Set interval to %s\n", value)
+						database.SetData(db, database.CLOUD_SYNC_INTERVAL, value)
 					},
 				},
 			},
