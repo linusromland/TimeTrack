@@ -1,6 +1,8 @@
 package commands
 
-import "github.com/urfave/cli/v2"
+import (
+	"github.com/urfave/cli/v2"
+)
 
 var AllCommands = []*cli.Command{
 	AddCommand,
@@ -12,4 +14,5 @@ var AllCommands = []*cli.Command{
 	InfoCommand,
 	ChangeCommand,
 	UpdateCommand,
+	SettingsCommand,
 }
