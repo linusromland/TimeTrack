@@ -171,6 +171,7 @@ type Duration struct {
 	period   string
 	sortkey  string
 	duration int64
+	difference int64
 }
 
 func googleEventsToEvents(events *googleCalendar.Events) []Event {
@@ -283,6 +284,30 @@ func formatTime(seconds int64) string {
 	return fmt.Sprintf("%dh %dm", hours, minutes)
 }
 
+func formatDifference(seconds int64) string {
+	isNegative := seconds < 0
+
+	if isNegative {
+		seconds = -seconds
+	}
+
+	hours := seconds / 3600
+	minutes := (seconds % 3600) / 60
+
+	operator := ""
+	if isNegative {
+		operator = "-"
+	} else {
+		operator = "+"
+	}
+
+	if hours == 0 {
+		return fmt.Sprintf("%s%dm", operator, minutes)
+	}
+
+	return fmt.Sprintf("%s%dh %dm", operator, hours, minutes)
+}
+
 func getTicketDurations(events []Event) []TicketDuration {
 	ticketMap := make(map[string]*TicketDuration)
 
@@ -351,14 +376,19 @@ func printEvents(events []Event, startDate, endDate time.Time, unit string) {
 	table.Render()
 	fmt.Println()
 
+	// int64
+	totalDifference := int64(0)
+	isNotDay := unit != "day";
+
 	// Print total time per unit
-	if unit != "day" {
+	if isNotDay {
 		unitDurations := getDurationsPerUnit(events, unit)
 		unitTable := tablewriter.NewWriter(os.Stdout)
-		unitTable.SetHeader([]string{unit, "Time"})
+		unitTable.SetHeader([]string{unit, "Time", "Difference"})
 
 		for _, d := range unitDurations {
-			unitTable.Append([]string{d.period, formatTime(d.duration)})
+			totalDifference += d.difference
+			unitTable.Append([]string{d.period, formatTime(d.duration), formatDifference(d.difference)})
 		}
 		unitTable.Render()
 		fmt.Println()
@@ -366,8 +396,17 @@ func printEvents(events []Event, startDate, endDate time.Time, unit string) {
 
 	// Print total time
 	totalTable := tablewriter.NewWriter(os.Stdout)
-	totalTable.SetHeader([]string{"Total time"})
-	totalTable.Append([]string{formatTime(totalTime)})
+
+	totalHeaders := []string{"Total time"}
+	totalData := []string{formatTime(totalTime)}
+
+	if isNotDay {
+		totalHeaders = append(totalHeaders, "Difference")
+		totalData = append(totalData, formatDifference(totalDifference))
+	}
+
+	totalTable.SetHeader(totalHeaders)
+	totalTable.Append(totalData)
 	totalTable.Render()
 }
 
@@ -379,12 +418,11 @@ func getDurationsPerUnit(events []Event, unit string) []Duration {
 
 		if unit == "days" {
 			period := event.Start.Format("2006-01-02")
-
 			durations = appendIfMissing(durations, Duration{
 				period:   period,
 				sortkey:  event.Start.Format("20060102"),
 				duration: duration,
-			})
+			}, 1)
 		} else if unit == "week" {
 			_, week := event.Start.ISOWeek()
 			period := fmt.Sprintf("Week %d %d", week, event.Start.Year())
@@ -392,14 +430,14 @@ func getDurationsPerUnit(events []Event, unit string) []Duration {
 				period:   period,
 				sortkey:  event.Start.Format("20060102"),
 				duration: duration,
-			})
+			}, 5)
 		} else if unit == "month" {
 			period := event.Start.Format("January 2006")
 			durations = appendIfMissing(durations, Duration{
 				period:   period,
 				sortkey:  event.Start.Format("20060102"),
 				duration: duration,
-			})
+			}, 22)
 		}
 	}
 
@@ -410,10 +448,14 @@ func getDurationsPerUnit(events []Event, unit string) []Duration {
 	return durations
 }
 
-func appendIfMissing(durationArray []Duration, duration Duration) []Duration {
+func appendIfMissing(durationArray []Duration, duration Duration, workingdays int) []Duration {
+	averageDay := 8 * 60 * 60; // 8 hours in seconds
+	expectedWorkingTime := averageDay * workingdays;
+
 	for i, d := range durationArray {
 		if d.period == duration.period {
 			durationArray[i].duration += duration.duration
+			durationArray[i].difference = durationArray[i].duration - int64(expectedWorkingTime)
 			return durationArray
 		}
 	}
