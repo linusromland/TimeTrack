@@ -12,47 +12,53 @@ TimeTrack is a Command Line Interface (CLI) application designed for efficient t
 
 ## Installation
 
-### macOS:
-
-Open your terminal.
-
-Run the following command to download and install TimeTrack:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.sh | bash
-```
-
 ### Windows:
 
-For users with PowerShell (Windows 10 and newer):
+For Windows users, TimeTrack can be installed using the provided installer found on the [releases page](https://github.com/linusromland/TimeTrack/releases).
+Simply download the latest .exe file and run it to install TimeTrack.
 
-1. Open PowerShell as Administrator.
+### Other Operating Systems:
 
-2. Run the following command:
+Currently, TimeTrack is officially supported on Windows so support for other operating systems is limited. However, TimeTrack can be built from source for other operating systems. But success is not guaranteed.
 
-```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/linusromland/TimeTrack/master/install.bat" -OutFile "install.bat"; .\install.bat
-```
+To build from source follow these steps:
 
-### Linux:
-
-For Linux users, manual installation is required:
-
-1. Navigate to the releases page of the TimeTrack repository.
-
-2. Download the latest .tar.gz archive suitable for your OS and architecture.
-
-3. Extract the archive using the following command:
+1. Clone the repository:
 
 ```bash
-tar -xzf TimeTrack\_<YOUR_OS_AND_ARCH>.tar.gz
+git clone git@github.com:linusromland/TimeTrack.git
 ```
 
-Move the TimeTrack binary to a directory in your PATH, typically `/usr/local/bin:`
+2. Create a `.env`
 
 ```bash
-sudo mv TimeTrack /usr/local/bin/
+cd TimeTrack
+cp .env.example .env
 ```
+
+Then fill in the required fields in the `.env` file. For more information on how to get the required credentials, see the [Google Calendar API documentation](https://developers.google.com/calendar/quickstart).
+
+3. Build the project:
+
+```bash
+./cli-build.sh VERSION
+```
+
+Where `VERSION` is the version number you want to build. For example, `./cli-build.sh 1.0.0`.
+
+4. Move the built binary to your PATH:
+
+```bash
+mv ./dist/TimeTrack /usr/local/bin
+```
+
+5. Run TimeTrack:
+
+```bash
+timetrack
+```
+
+That should be it! You should now be able to run TimeTrack from anywhere using the `timetrack` command.
 
 ### Update
 
