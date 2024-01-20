@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.4.0 (2024-01-19)
+
+- Implemented overtime/undertime calculation to `list` command.
+
 ## 0.3.1 (2023-12-03)
 
 -   Fixed bug where `list` command would not use the unit specified by the user.
