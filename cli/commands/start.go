@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
+
 	"fmt"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 var StartCommand = &cli.Command{
 	Name:    "start",
 	Aliases: []string{"s"},
-	Usage:   "start a task",
+	Usage:   "Start a task",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "name",
@@ -33,7 +34,7 @@ var StartCommand = &cli.Command{
 			fmt.Println(err)
 			return nil
 		}
-		calendarId := database.GetData(db, "calendarId")
+		calendarId := database.GetData(db, database.CALENDAR_ID)
 		if calendarId == "" {
 			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
 			return nil
@@ -43,7 +44,7 @@ var StartCommand = &cli.Command{
 			return cli.Exit("Invalid start time. Please use the following format: HH:mm", 1)
 		}
 
-		currentTask := database.GetData(db, "currentTask")
+		currentTask := database.GetData(db, database.CURRENT_TASK)
 		if currentTask != "" {
 			return cli.Exit("Task '"+currentTask+"' is already running. Please stop the current task before starting a new one.", 1)
 		}
@@ -51,8 +52,8 @@ var StartCommand = &cli.Command{
 		startTime := fmt.Sprintf("%sT%s:00+02:00", time.Now().Format("2006-01-02"), c.String("start"))
 		parsedStartTime, _ := time.Parse(time.RFC3339, startTime)
 
-		database.SetData(db, "currentTask", c.String("name"))
-		database.SetData(db, "currentTaskStartTime", startTime)
+		database.SetData(db, database.CURRENT_TASK, c.String("name"))
+		database.SetData(db, database.CURRENT_TASK_START_TIME, startTime)
 
 		fmt.Printf("Started task '%s' at %s\n", c.String("name"), parsedStartTime.Format("2006-01-02 15:04"))
 		return nil

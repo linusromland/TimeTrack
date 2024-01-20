@@ -1,8 +1,9 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+
 	"fmt"
 
 	badger "github.com/dgraph-io/badger/v4"
@@ -13,7 +14,7 @@ import (
 var SelectCalendarCommand = &cli.Command{
 	Name:    "selectCalendar",
 	Aliases: []string{"sc"},
-	Usage:   "Select database",
+	Usage:   "Select calendar",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "calendarId",
@@ -86,7 +87,7 @@ func updateCalendarId(db *badger.DB, calendarId string) error {
 	}
 
 	// Save calendar ID to database
-	err := database.SetData(db, "calendarId", calendarId)
+	err := database.SetData(db, database.CALENDAR_ID, calendarId)
 	if err != nil {
 		fmt.Println(err)
 	} else {

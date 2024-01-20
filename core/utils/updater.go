@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"TimeTrack/core/database"
+
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,9 +12,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-	"time"
-
-	"TimeTrack/src/database"
 )
 
 func parseVersion(version string) int {
@@ -47,39 +46,11 @@ func githubRepo() (string, string) {
 	return githubUser, githubRepo
 }
 
-func CheckForUpdate(version string, skipChecks bool) (bool, error) {
+func CheckForUpdate(version string) (string, error) {
 	db, err := database.OpenDB()
 	if err != nil {
 		database.CloseDB(db)
-		return false, err
-	}
-
-	LAST_UPDATE_CHECK_DB_KEY := "last_update_check"
-
-	if !skipChecks {
-		// Get the last time the user checked for updates.
-		lastUpdateCheck := database.GetData(db, LAST_UPDATE_CHECK_DB_KEY)
-
-		// Check if the last check is older than 6 hours.
-		if lastUpdateCheck != "" {
-			// Parse the last update check to a time.
-			lastUpdateCheckTime, err := time.Parse("2006-01-02 15:04", lastUpdateCheck)
-			if err != nil {
-				return false, err
-			}
-
-			// Get the current time.
-			currentTime := time.Now()
-
-			// Calculate the difference between the last update check and the current time.
-			diff := currentTime.Sub(lastUpdateCheckTime)
-
-			// If the difference is less than 6 hours, return.
-			if diff.Hours() < 6 {
-				database.CloseDB(db)
-				return false, err
-			}
-		}
+		return "", err
 	}
 
 	// Parse the version number to an integer.
@@ -91,7 +62,7 @@ func CheckForUpdate(version string, skipChecks bool) (bool, error) {
 	resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", githubUser, githubRepo))
 	if err != nil {
 		database.CloseDB(db)
-		return false, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
@@ -99,7 +70,7 @@ func CheckForUpdate(version string, skipChecks bool) (bool, error) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		database.CloseDB(db)
-		return false, err
+		return "", err
 	}
 
 	// Create a struct for the response body.
@@ -111,51 +82,22 @@ func CheckForUpdate(version string, skipChecks bool) (bool, error) {
 	err = json.Unmarshal(body, &release)
 	if err != nil {
 		database.CloseDB(db)
-		return false, err
+		return "", err
 	}
-
-	// Set the last update check to the current time.
-	database.SetData(db, LAST_UPDATE_CHECK_DB_KEY, time.Now().Format("2006-01-02 15:04"))
 
 	tagName := release.TagName
 
 	// Parse the version number to an integer.
 	latestVersion := parseVersion(tagName)
 
-	// If the latest version is bigger than the current version, return the latest version.
+	// If the latest version is newer than the current version, return.
 	if latestVersion > currentVersion {
-		SKIP_DB_KEY := "skip_update"
-
-		if !skipChecks {
-			// Check if the user has skipped this update.
-			skipUpdate := database.GetData(db, SKIP_DB_KEY)
-
-			// If the user has skipped this update, return.
-			if skipUpdate == tagName {
-				database.CloseDB(db)
-				return true, nil
-			}
-		}
-
-		fmt.Printf("There is a new version of TimeTrack available: %s\n", tagName)
-
-		if Confirm("Do you want to update?") {
-			err = UpdateVersion(tagName)
-			if err != nil {
-				database.CloseDB(db)
-				return false, err
-			}
-		} else {
-			fmt.Println("Skipping this update, you can update later by running 'timetrack update'.")
-			database.SetData(db, SKIP_DB_KEY, tagName)
-		}
-
 		database.CloseDB(db)
-		return true, nil
+		return tagName, nil
 	}
 
 	database.CloseDB(db)
-	return false, nil
+	return "", nil
 }
 
 func UpdateVersion(version string) error {

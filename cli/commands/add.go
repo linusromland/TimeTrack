@@ -1,9 +1,12 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	cliUtils "TimeTrack/cli/utils"
+
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
+
 	"fmt"
 	"time"
 
@@ -13,7 +16,7 @@ import (
 var AddCommand = &cli.Command{
 	Name:    "add",
 	Aliases: []string{"a"},
-	Usage:   "add a task to the list",
+	Usage:   "Add a task to the list",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "name",
@@ -62,7 +65,7 @@ var AddCommand = &cli.Command{
 			fmt.Println(err)
 			return nil
 		}
-		calendarId := database.GetData(db, "calendarId")
+		calendarId := database.GetData(db, database.CALENDAR_ID)
 		if calendarId == "" {
 			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
 			return nil
@@ -89,7 +92,7 @@ var AddCommand = &cli.Command{
 		startTime := fmt.Sprintf("%sT%s:00+02:00", c.String("date"), c.String("start"))
 		endTime := fmt.Sprintf("%sT%s:00+02:00", endDate, c.String("end"))
 
-		if c.Bool("skipConfirmation") || utils.Confirm("This will create a new task with the following information:\nName: "+c.String("name")+"\nStart: "+utils.FormatDate(startTime, time.RFC3339)+"\nEnd: "+utils.FormatDate(endTime, time.RFC3339)+"\n\nAre you sure?") {
+		if c.Bool("skipConfirmation") || cliUtils.Confirm("This will create a new task with the following information:\nName: "+c.String("name")+"\nStart: "+utils.FormatDate(startTime, time.RFC3339)+"\nEnd: "+utils.FormatDate(endTime, time.RFC3339)+"\n\nAre you sure?") {
 
 			startTimeParsed, _ := time.Parse(time.RFC3339, startTime)
 			endTimeParsed, _ := time.Parse(time.RFC3339, endTime)

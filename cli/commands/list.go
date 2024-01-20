@@ -1,9 +1,10 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
+
 	"fmt"
 	"os"
 	"sort"
@@ -19,7 +20,7 @@ import (
 var ListCommand = &cli.Command{
 	Name:    "list",
 	Aliases: []string{"l"},
-	Usage:   "list all tasks",
+	Usage:   "List all tasks",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "start",
@@ -54,7 +55,7 @@ var ListCommand = &cli.Command{
 			fmt.Println(err)
 			return nil
 		}
-		calendarId := database.GetData(db, "calendarId")
+		calendarId := database.GetData(db, database.CALENDAR_ID)
 		if calendarId == "" {
 			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
 			return nil

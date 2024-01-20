@@ -1,9 +1,10 @@
 package commands
 
 import (
-	"TimeTrack/src/calendar"
-	"TimeTrack/src/database"
-	"TimeTrack/src/utils"
+	"TimeTrack/core/calendar"
+	"TimeTrack/core/database"
+	"TimeTrack/core/utils"
+
 	"fmt"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 var ChangeCommand = &cli.Command{
 	Name:    "change",
 	Aliases: []string{"c"},
-	Usage:   "end the current task and start a new one",
+	Usage:   "End the current task and start a new one",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "end",
@@ -40,7 +41,7 @@ var ChangeCommand = &cli.Command{
 			fmt.Println(err)
 			return nil
 		}
-		calendarId := database.GetData(db, "calendarId")
+		calendarId := database.GetData(db, database.CALENDAR_ID)
 		if calendarId == "" {
 			fmt.Println("No calendar selected. Please select a calendar with the selectCalendar command.")
 			return nil
@@ -51,12 +52,12 @@ var ChangeCommand = &cli.Command{
 		}
 
 		// End current task
-		currentTask := database.GetData(db, "currentTask")
+		currentTask := database.GetData(db, database.CURRENT_TASK)
 		if currentTask == "" {
 			return cli.Exit("No task is currently running. Please start a task before changing it.", 1)
 		}
 
-		startTime := database.GetData(db, "currentTaskStartTime")
+		startTime := database.GetData(db, database.CURRENT_TASK_START_TIME)
 		if startTime == "" {
 			return cli.Exit("No start time found for current task. Please start a task before changing it.", 1)
 		}
@@ -77,8 +78,8 @@ var ChangeCommand = &cli.Command{
 		fmt.Printf("Event created: %s\n", event.HtmlLink)
 
 		// Start new task
-		database.SetData(db, "currentTask", c.String("name"))
-		database.SetData(db, "currentTaskStartTime", endTime)
+		database.SetData(db, database.CURRENT_TASK, c.String("name"))
+		database.SetData(db, database.CURRENT_TASK_START_TIME, endTime)
 
 		fmt.Printf("Started new task '%s' at %s\n", c.String("name"), parsedEndTime.Format("2006-01-02 15:04"))
 		return nil
