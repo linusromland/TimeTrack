@@ -7,7 +7,6 @@ replace TimeTrack/core => ../core
 require (
 	TimeTrack/core v0.0.0-00010101000000-000000000000
 	github.com/dgraph-io/badger/v4 v4.2.0
-	github.com/joho/godotenv v1.5.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rivo/tview v0.0.0-20231126152417-33a1d271f2b6
 	github.com/urfave/cli/v2 v2.26.0

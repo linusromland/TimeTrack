@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,11 +17,6 @@ var (
 )
 
 func main() {
-	if version == "dev" {
-		fmt.Println("Running in development mode.")
-		godotenv.Load("../.env")
-	}
-
 	checkForUpdate()
 
 	app := &cli.App{

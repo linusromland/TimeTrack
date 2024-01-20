@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	PRODUCTION_CLIENT_ID     string
-	PRODUCTION_CLIENT_SECRET string
-	tokenDir                 = filepath.Join(userConfigDir(), "TimeTrack")
-	tokenFile                = filepath.Join(tokenDir, "token.json")
+	GOOGLE_CLIENT_ID     string
+	GOOGLE_CLIENT_SECRET string
+	tokenDir             = filepath.Join(userConfigDir(), "TimeTrack")
+	tokenFile            = filepath.Join(tokenDir, "token.json")
 )
 
 func userConfigDir() string {
@@ -106,18 +106,9 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 }
 
 func getOAuthConfig() *oauth2.Config {
-	CLIENT_ID := os.Getenv("GOOGLE_CLIENT_ID")
-	if CLIENT_ID == "" {
-		CLIENT_ID = PRODUCTION_CLIENT_ID
-	}
-	CLIENT_SECRET := os.Getenv("GOOGLE_CLIENT_SECRET")
-	if CLIENT_SECRET == "" {
-		CLIENT_SECRET = PRODUCTION_CLIENT_SECRET
-	}
-
 	config := &oauth2.Config{
-		ClientID:     CLIENT_ID,
-		ClientSecret: CLIENT_SECRET,
+		ClientID:     GOOGLE_CLIENT_ID,
+		ClientSecret: GOOGLE_CLIENT_SECRET,
 		RedirectURL:  "http://localhost:8080/callback",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/calendar",
