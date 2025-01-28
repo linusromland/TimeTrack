@@ -8,17 +8,14 @@ require (
 	google.golang.org/api v0.152.0
 )
 
-require github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/glog v1.1.2 // indirect
+	github.com/golang/glog v1.2.4 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
