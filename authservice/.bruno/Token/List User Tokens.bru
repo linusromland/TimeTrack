@@ -1,17 +1,13 @@
 meta {
-  name: Revoke Token
+  name: List User Tokens
   type: http
-  seq: 7
+  seq: 1
 }
 
-delete {
-  url: {{URL}}/auth/token/revoke/:tokenId
+get {
+  url: {{URL}}/auth/token/list
   body: none
   auth: bearer
-}
-
-params:path {
-  tokenId: 7344a45b-ce5a-40d3-a614-521caf2eff1b
 }
 
 auth:bearer {

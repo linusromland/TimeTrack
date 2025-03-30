@@ -1,12 +1,12 @@
 meta {
-  name: Generate API Token
+  name: Get User
   type: http
-  seq: 5
+  seq: 3
 }
 
-post {
-  url: {{URL}}/auth/token/generate
-  body: json
+get {
+  url: {{URL}}/auth/user
+  body: none
   auth: bearer
 }
 

@@ -31,7 +31,13 @@ type Token struct {
 	ID        string    `bson:"_id" json:"id"`
 	Token     string    `bson:"token" json:"token"`
 	UserID    string    `bson:"user_id" json:"user_id"`
-	Scope     string    `bson:"scope" json:"scope"`
+	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
+}
+
+type Integration struct {
+	ID        string    `bson:"_id" json:"id"`
+	Token     string    `bson:"token" json:"token"`
+	UserID    string    `bson:"user_id" json:"user_id"`
 	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
 }
 
@@ -70,23 +76,25 @@ func main() {
 	// Versioned API path `/api/v1`
 	apiV1 := r.Group("/api/v1")
 	{
-		// Authentication routes
+
 		apiV1.POST("/register", registerUser)
 		apiV1.POST("/login", loginUser)
 
-		// OAuth routes
-		oauthGroup := apiV1.Group("/oauth")
-		{
-			oauthGroup.GET("/google", googleOAuthLogin)
-			oauthGroup.GET("/google/callback", googleOAuthCallback)
-		}
-
+		// Authentication routes
 		authGroup := apiV1.Group("/auth")
 		authGroup.Use(authMiddleware)
 		{
 			authGroup.POST("/token/generate", generateAPIToken)
 			authGroup.GET("/token/list", listUserTokens)
 			authGroup.DELETE("/token/revoke/:id", revokeToken)
+			authGroup.GET("/user", getUser)
+		}
+
+		integrationGroup := apiV1.Group("/integration")
+		integrationGroup.Use(integrationAuthMiddleware)
+		{
+			integrationGroup.POST("/validate", validateIntegrationToken) // Validate integration token
+			integrationGroup.GET("/user", getUserForIntegration)        // Get user associated with the token
 		}
 	}
 
@@ -136,13 +144,44 @@ func authMiddleware(c *gin.Context) {
 		return
 	}
 
-	userID := claims["email"].(string)
+	userID := claims["userId"].(string)
 	c.Set("user_id", userID) // Store user_id in the context for further use
 
 	c.Next()
 }
 
+func integrationAuthMiddleware(c *gin.Context) {
+	// Get the token from the Authorization header
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+		c.Abort()
+		return
+	}
 
+	// Remove "Bearer " prefix from the tokenString if present
+	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	// Parse the token
+	integrationSecret := os.Getenv("INTEGRATION_SECRET")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method is HS256
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(integrationSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
 
 func registerUser(c *gin.Context) {
 	var user User
@@ -185,6 +224,7 @@ func loginUser(c *gin.Context) {
 		return
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"userId": user.ID,
 		"email": user.Email,
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
 	})
@@ -197,15 +237,9 @@ func loginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
 
-func googleOAuthLogin(c *gin.Context) {
-	url := oauthConf.AuthCodeURL("state", oauth2.AccessTypeOffline)
-	c.Redirect(http.StatusFound, url)
-}
-
 func generateAPIToken(c *gin.Context) {
 	var req struct {
-		Scope  string `json:"scope"`
-		Expiry int    `json:"expiry"`
+		Expiry int `json:"expiry"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -217,8 +251,7 @@ func generateAPIToken(c *gin.Context) {
 
 	// Generate jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"scope": req.Scope,
-		"exp":   time.Now().Add(time.Hour * time.Duration(req.Expiry)).Unix(),
+		"exp": time.Now().Add(time.Hour * time.Duration(req.Expiry)).Unix(),
 	})
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -232,7 +265,6 @@ func generateAPIToken(c *gin.Context) {
 		ID:        uuid.New().String(),
 		Token:     tokenString,
 		UserID:    userID,
-		Scope:     req.Scope,
 		ExpiresAt: time.Now().Add(time.Duration(req.Expiry) * time.Hour),
 	}
 
@@ -261,31 +293,12 @@ func listUserTokens(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing tokens"})
 		return
 	}
+
+	if tokens == nil {
+		tokens = []Token{}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
-}
-
-func googleOAuthCallback(c *gin.Context) {
-	code := c.Query("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Code not provided"})
-		return
-	}
-
-	token, err := oauthConf.Exchange(context.TODO(), code)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to exchange token"})
-		return
-	}
-
-	client := oauthConf.Client(context.TODO(), token)
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
-		return
-	}
-	defer resp.Body.Close()
-
-	c.JSON(http.StatusOK, gin.H{"message": "Google OAuth successful"})
 }
 
 func revokeToken(c *gin.Context) {
@@ -297,4 +310,92 @@ func revokeToken(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Token revoked"})
+}
+
+func getUser(c *gin.Context) {
+	userID := c.GetString("user_id")
+	collection := client.Database("auth_service").Collection("users")
+	var user User
+	err := collection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0})).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching user"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+func validateIntegrationToken(c *gin.Context) {
+	// Get integration token from the header
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
+		return
+	}
+
+	// Remove "Bearer " prefix from the tokenString if present
+	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	// Parse the token using integration secret
+	integrationSecret := os.Getenv("INTEGRATION_SECRET")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(integrationSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired integration token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Integration token is valid"})
+}
+
+func getUserForIntegration(c *gin.Context) {
+	// Get integration token from the header
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
+		return
+	}
+
+	// Remove "Bearer " prefix from the tokenString if present
+	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	// Parse the integration token
+	integrationSecret := os.Getenv("INTEGRATION_SECRET")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(integrationSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired integration token"})
+		return
+	}
+
+	// Assuming integration token is associated with a user in the database
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["user_id"] == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	userID := claims["user_id"].(string)
+	collection := client.Database("auth_service").Collection("users")
+	var user User
+	err = collection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0})).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
