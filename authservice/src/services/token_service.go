@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +41,7 @@ func (s *TokenService) GenerateAPIToken(c *gin.Context, userID string, expiry in
 		"exp":     time.Now().Add(time.Hour * time.Duration(expiry)).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET"))) // Use JWT_SECRET for API tokens
+	tokenString, err := token.SignedString([]byte(s.jwtSecret))
 	if err != nil {
 		return "", nil, err
 	}

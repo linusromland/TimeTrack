@@ -25,12 +25,16 @@ func NewUserService(db *mongo.Database) *UserService {
 }
 
 func (s *UserService) RegisterUser(c *gin.Context, user *models.User) error {
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
 	user.Password = string(hashedPassword)
 	user.DeletedAt = time.Time{}
 	user.ID = uuid.New().String()
 
-	_, err := s.userCollection.InsertOne(context.TODO(), user)
+	_, err = s.userCollection.InsertOne(context.TODO(), user)
 	return err
 }
 
