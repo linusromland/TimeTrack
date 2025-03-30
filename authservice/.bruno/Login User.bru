@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{URL}}/auth/login
+  url: {{URL}}/login
   body: json
   auth: inherit
 }
@@ -18,8 +18,5 @@ body:json {
 }
 
 script:post-response {
-  function onResponse(response) {
-    const body = response.getBody()
-    bru.setEnvVar('jwt_token', body.token)
-  }
+  bru.setEnvVar('jwt_token', res.body.token)
 }

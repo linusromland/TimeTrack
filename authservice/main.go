@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ import (
 )
 
 type User struct {
+	ID        string    `bson:"_id" json:"id"`
 	Email     string    `bson:"email" json:"email"`
 	Password  string    `bson:"password" json:"password,omitempty"`
 	DeletedAt time.Time `bson:"deleted_at,omitempty" json:"-"`
@@ -28,7 +30,7 @@ type User struct {
 type Token struct {
 	ID        string    `bson:"_id" json:"id"`
 	Token     string    `bson:"token" json:"token"`
-	UserEmail string    `bson:"user_email" json:"user_email"`
+	UserID    string    `bson:"user_id" json:"user_id"`
 	Scope     string    `bson:"scope" json:"scope"`
 	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
 }
@@ -40,7 +42,6 @@ var (
 
 func main() {
 	// Load environment variables from .env file
-	// TODO: make this only run in development
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -66,16 +67,28 @@ func main() {
 		Endpoint:     google.Endpoint,
 	}
 
-	// Authentication routes
-	r.POST("/auth/register", registerUser)
-	r.POST("/auth/login", loginUser)
-	r.GET("/auth/oauth/google", googleOAuthLogin)
-	r.GET("/auth/oauth/google/callback", googleOAuthCallback)
+	// Versioned API path `/api/v1`
+	apiV1 := r.Group("/api/v1")
+	{
+		// Authentication routes
+		apiV1.POST("/register", registerUser)
+		apiV1.POST("/login", loginUser)
 
-	// Token management
-	r.POST("/token/generate", generateAPIToken)
-	r.GET("/token/list", listUserTokens)
-	r.DELETE("/token/revoke/:id", revokeToken)
+		// OAuth routes
+		oauthGroup := apiV1.Group("/oauth")
+		{
+			oauthGroup.GET("/google", googleOAuthLogin)
+			oauthGroup.GET("/google/callback", googleOAuthCallback)
+		}
+
+		authGroup := apiV1.Group("/auth")
+		authGroup.Use(authMiddleware)
+		{
+			authGroup.POST("/token/generate", generateAPIToken)
+			authGroup.GET("/token/list", listUserTokens)
+			authGroup.DELETE("/token/revoke/:id", revokeToken)
+		}
+	}
 
 	// Start server
 	port := os.Getenv("PORT")
@@ -84,6 +97,52 @@ func main() {
 	}
 	r.Run(":" + port)
 }
+
+func authMiddleware(c *gin.Context) {
+	// Get the token from the Authorization header
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+		c.Abort()
+		return
+	}
+
+	// Remove "Bearer " prefix from the tokenString if present
+	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	// Parse the token
+	jwtSecret := os.Getenv("JWT_SECRET")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method is HS256
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		c.Abort()
+		return
+	}
+
+	// Extract user ID from token and set it in the context
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims["email"] == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		c.Abort()
+		return
+	}
+
+	userID := claims["email"].(string)
+	c.Set("user_id", userID) // Store user_id in the context for further use
+
+	c.Next()
+}
+
+
 
 func registerUser(c *gin.Context) {
 	var user User
@@ -95,6 +154,7 @@ func registerUser(c *gin.Context) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(hashedPassword)
 	user.DeletedAt = time.Time{}
+	user.ID = uuid.New().String()
 
 	collection := client.Database("auth_service").Collection("users")
 	_, err := collection.InsertOne(context.TODO(), user)
@@ -152,6 +212,9 @@ func generateAPIToken(c *gin.Context) {
 		return
 	}
 
+	// Get user ID from context
+	userID := c.GetString("user_id")
+
 	// Generate jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"scope": req.Scope,
@@ -168,7 +231,7 @@ func generateAPIToken(c *gin.Context) {
 	tokenObj := Token{
 		ID:        uuid.New().String(),
 		Token:     tokenString,
-		UserEmail: c.GetString("email"),
+		UserID:    userID,
 		Scope:     req.Scope,
 		ExpiresAt: time.Now().Add(time.Duration(req.Expiry) * time.Hour),
 	}
@@ -183,9 +246,10 @@ func generateAPIToken(c *gin.Context) {
 }
 
 func listUserTokens(c *gin.Context) {
+	userID := c.GetString("user_id")
+
 	collection := client.Database("auth_service").Collection("tokens")
-	/// project so Token is not returned
-	cursor, err := collection.Find(context.TODO(), bson.M{"user_email": c.GetString("email"), "deleted_at": bson.M{"$exists": false}}, options.Find().SetProjection(bson.M{"token": 0}))
+	cursor, err := collection.Find(context.TODO(), bson.M{"user_id": userID, "deleted_at": bson.M{"$exists": false}}, options.Find().SetProjection(bson.M{"token": 0}))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching tokens"})
 		return
