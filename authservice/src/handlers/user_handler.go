@@ -5,18 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"authservice/src/models" 
+	"authservice/src/models"
 	"authservice/src/services"
 )
 
 type UserHandler struct {
-	userService *services.UserService
+	userService  *services.UserService
 	tokenService *services.TokenService
 }
 
 func NewUserHandler(us *services.UserService, ts *services.TokenService) *UserHandler {
 	return &UserHandler{
-		userService: us,
+		userService:  us,
 		tokenService: ts,
 	}
 }

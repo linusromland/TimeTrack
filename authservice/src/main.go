@@ -7,9 +7,9 @@ import (
 
 	"authservice/src/config"
 	"authservice/src/database"
-	"authservice/src/services"
 	"authservice/src/handlers"
 	"authservice/src/middleware"
+	"authservice/src/services"
 )
 
 func main() {

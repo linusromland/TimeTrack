@@ -10,13 +10,13 @@ import (
 )
 
 type Config struct {
-	MongoURI          string
-	Port              string
-	JWTSecret         string
-	IntegrationSecret string
-	GoogleClientID    string
+	MongoURI           string
+	Port               string
+	JWTSecret          string
+	IntegrationSecret  string
+	GoogleClientID     string
 	GoogleClientSecret string
-	GoogleRedirectURL   string
+	GoogleRedirectURL  string
 }
 
 var AppConfig *Config
@@ -29,13 +29,13 @@ func LoadConfig() *Config {
 	}
 
 	cfg := &Config{
-		MongoURI:          os.Getenv("MONGO_URI"),
-		Port:              os.Getenv("PORT"),
-		JWTSecret:         os.Getenv("JWT_SECRET"),
-		IntegrationSecret: os.Getenv("INTEGRATION_SECRET"),
-		GoogleClientID:    os.Getenv("GOOGLE_CLIENT_ID"),
+		MongoURI:           os.Getenv("MONGO_URI"),
+		Port:               os.Getenv("PORT"),
+		JWTSecret:          os.Getenv("JWT_SECRET"),
+		IntegrationSecret:  os.Getenv("INTEGRATION_SECRET"),
+		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		GoogleRedirectURL:   os.Getenv("GOOGLE_REDIRECT_URL"),
+		GoogleRedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 	}
 	AppConfig = cfg
 	return cfg

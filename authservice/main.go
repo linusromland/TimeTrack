@@ -94,7 +94,7 @@ func main() {
 		integrationGroup.Use(integrationAuthMiddleware)
 		{
 			integrationGroup.POST("/validate", validateIntegrationToken) // Validate integration token
-			integrationGroup.GET("/user", getUserForIntegration)        // Get user associated with the token
+			integrationGroup.GET("/user", getUserForIntegration)         // Get user associated with the token
 		}
 	}
 
@@ -182,7 +182,6 @@ func integrationAuthMiddleware(c *gin.Context) {
 	c.Next()
 }
 
-
 func registerUser(c *gin.Context) {
 	var user User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -225,8 +224,8 @@ func loginUser(c *gin.Context) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": user.ID,
-		"email": user.Email,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"email":  user.Email,
+		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	})
 	jwtSecret := os.Getenv("JWT_SECRET")
 	tokenString, err := token.SignedString([]byte(jwtSecret))
@@ -252,7 +251,7 @@ func generateAPIToken(c *gin.Context) {
 	// Generate jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID,
-		"exp": time.Now().Add(time.Hour * time.Duration(req.Expiry)).Unix(),
+		"exp":     time.Now().Add(time.Hour * time.Duration(req.Expiry)).Unix(),
 	})
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -446,4 +445,3 @@ func getUserForIntegration(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
-
