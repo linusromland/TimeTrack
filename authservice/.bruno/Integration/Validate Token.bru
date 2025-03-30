@@ -1,11 +1,11 @@
 meta {
-  name: Get User
+  name: Validate Token
   type: http
-  seq: 1
+  seq: 2
 }
 
-get {
-  url: {{URL}}/integration/user?user_token={{user_token}}
+post {
+  url: {{URL}}/integration/validate?user_token={{user_token}}
   body: none
   auth: bearer
 }

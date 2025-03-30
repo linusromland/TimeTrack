@@ -20,3 +20,7 @@ body:json {
     "expiry": 24
   }
 }
+
+script:post-response {
+  bru.setEnvVar('user_token', res.body.token)
+}

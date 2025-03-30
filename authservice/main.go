@@ -151,23 +151,22 @@ func authMiddleware(c *gin.Context) {
 }
 
 func integrationAuthMiddleware(c *gin.Context) {
-	// Get the token from the Authorization header
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+	// Get the integration token from the Authorization header
+	integrationTokenString := c.GetHeader("Authorization")
+	if integrationTokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
 		c.Abort()
 		return
 	}
 
 	// Remove "Bearer " prefix from the tokenString if present
-	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
+	if len(integrationTokenString) > 6 && integrationTokenString[:7] == "Bearer " {
+		integrationTokenString = integrationTokenString[7:]
 	}
 
-	// Parse the token
+	// Parse the integration token using the integration secret
 	integrationSecret := os.Getenv("INTEGRATION_SECRET")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Check the signing method is HS256
+	token, err := jwt.Parse(integrationTokenString, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
 		}
@@ -175,13 +174,14 @@ func integrationAuthMiddleware(c *gin.Context) {
 	})
 
 	if err != nil || !token.Valid {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired integration token"})
 		c.Abort()
 		return
 	}
 
 	c.Next()
 }
+
 
 func registerUser(c *gin.Context) {
 	var user User
@@ -251,6 +251,7 @@ func generateAPIToken(c *gin.Context) {
 
 	// Generate jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
 		"exp": time.Now().Add(time.Hour * time.Duration(req.Expiry)).Unix(),
 	})
 
@@ -326,20 +327,20 @@ func getUser(c *gin.Context) {
 
 func validateIntegrationToken(c *gin.Context) {
 	// Get integration token from the header
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
+	integrationTokenString := c.GetHeader("Authorization")
+	if integrationTokenString == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
 		return
 	}
 
 	// Remove "Bearer " prefix from the tokenString if present
-	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
+	if len(integrationTokenString) > 6 && integrationTokenString[:7] == "Bearer " {
+		integrationTokenString = integrationTokenString[7:]
 	}
 
-	// Parse the token using integration secret
+	// Parse the integration token using integration secret
 	integrationSecret := os.Getenv("INTEGRATION_SECRET")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(integrationTokenString, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
 		}
@@ -351,44 +352,90 @@ func validateIntegrationToken(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Integration token is valid"})
+	// For GET request, user token should be in the query parameters
+	userToken := c.DefaultQuery("user_token", "")
+	if userToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User token is required in query parameters"})
+		return
+	}
+
+	// Validate user token
+	jwtSecret := os.Getenv("JWT_SECRET")
+	parsedUserToken, err := jwt.Parse(userToken, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method is HS256
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil || !parsedUserToken.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired user token"})
+		return
+	}
+
+	c.Next()
 }
 
 func getUserForIntegration(c *gin.Context) {
-	// Get integration token from the header
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
+	// Extract integration token from Authorization header
+	integrationTokenString := c.GetHeader("Authorization")
+	if integrationTokenString == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
 		return
 	}
 
 	// Remove "Bearer " prefix from the tokenString if present
-	if len(tokenString) > 6 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
+	if len(integrationTokenString) > 6 && integrationTokenString[:7] == "Bearer " {
+		integrationTokenString = integrationTokenString[7:]
 	}
 
 	// Parse the integration token
 	integrationSecret := os.Getenv("INTEGRATION_SECRET")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	integrationToken, err := jwt.Parse(integrationTokenString, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
 		}
 		return []byte(integrationSecret), nil
 	})
 
-	if err != nil || !token.Valid {
+	if err != nil || !integrationToken.Valid {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired integration token"})
 		return
 	}
 
-	// Assuming integration token is associated with a user in the database
-	claims, ok := token.Claims.(jwt.MapClaims)
+	// For GET request, user token should be in the query parameters
+	userToken := c.DefaultQuery("user_token", "")
+	if userToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User token is required in query parameters"})
+		return
+	}
+
+	// Validate user token
+	jwtSecret := os.Getenv("JWT_SECRET")
+	parsedUserToken, err := jwt.Parse(userToken, func(token *jwt.Token) (interface{}, error) {
+		// Check the signing method is HS256
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Method)
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil || !parsedUserToken.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired user token"})
+		return
+	}
+
+	// Extract user ID from the parsed user token claims
+	claims, ok := parsedUserToken.Claims.(jwt.MapClaims)
 	if !ok || claims["user_id"] == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user token claims"})
 		return
 	}
 
 	userID := claims["user_id"].(string)
+
+	// Retrieve the user associated with the token
 	collection := client.Database("auth_service").Collection("users")
 	var user User
 	err = collection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0})).Decode(&user)
@@ -399,3 +446,4 @@ func getUserForIntegration(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
+
