@@ -1,0 +1,8 @@
+{
+    "version": "1",
+    "name": "auth-service",
+    "type": "collection",
+    "ignore": [
+        ".git"
+    ]
+}

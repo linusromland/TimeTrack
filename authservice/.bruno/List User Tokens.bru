@@ -1,0 +1,22 @@
+meta {
+  name: List User Tokens
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{URL}}/token/list
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "scope": "cli",
+    "expiry": 24
+  }
+}

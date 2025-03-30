@@ -1,0 +1,26 @@
+meta {
+  name: Revoke Token
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{URL}}/token/revoke/:tokenId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  tokenId: 
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "scope": "cli",
+    "expiry": 24
+  }
+}
