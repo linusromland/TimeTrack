@@ -1,0 +1,26 @@
+meta {
+  name: Get User
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{URL}}/integration/user?user_token={{user_token}}
+  body: none
+  auth: bearer
+}
+
+params:query {
+  user_token: {{user_token}}
+}
+
+auth:bearer {
+  token: {{INTEGRATION_TOKEN}}
+}
+
+body:json {
+  {
+    "scope": "cli",
+    "expiry": 24
+  }
+}

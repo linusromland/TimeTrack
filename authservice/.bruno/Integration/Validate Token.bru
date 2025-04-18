@@ -1,0 +1,26 @@
+meta {
+  name: Validate Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{URL}}/integration/validate?user_token={{user_token}}
+  body: none
+  auth: bearer
+}
+
+params:query {
+  user_token: {{user_token}}
+}
+
+auth:bearer {
+  token: {{INTEGRATION_TOKEN}}
+}
+
+body:json {
+  {
+    "scope": "cli",
+    "expiry": 24
+  }
+}

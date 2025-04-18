@@ -1,0 +1,26 @@
+meta {
+  name: Generate API Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{URL}}/auth/token/generate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "scope": "cli",
+    "expiry": 24
+  }
+}
+
+script:post-response {
+  bru.setEnvVar('user_token', res.body.token)
+}
