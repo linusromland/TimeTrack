@@ -1,11 +1,9 @@
-module TimeTrack/cli
+module TimeTrack
 
 go 1.21.3
 
-replace TimeTrack/core => ../core
-
 require (
-	TimeTrack/core v0.0.0-00010101000000-000000000000
+	TimeTrack/ v0.0.0-00010101000000-000000000000
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/gdamore/tcell/v2 v2.7.0
 	github.com/olekukonko/tablewriter v0.0.5

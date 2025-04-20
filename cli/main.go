@@ -1,10 +1,9 @@
 package main
 
 import (
-	"TimeTrack/cli/commands"
-	cliUtils "TimeTrack/cli/utils"
-	"TimeTrack/core/database"
-	"TimeTrack/core/utils"
+	"TimeTrack/commands"
+	"TimeTrack/database"
+	"TimeTrack/utils"
 
 	"fmt"
 	"os"
@@ -48,7 +47,7 @@ func checkForUpdate() {
 		// Check if the user has skipped this update.
 		skipUpdate := database.GetData(db, database.SKIP_UPDATE)
 		if skipUpdate == updateAvailable {
-			if cliUtils.Confirm("Do you want to update?") {
+			if utils.Confirm("Do you want to update?") {
 				err = utils.UpdateVersion(updateAvailable)
 				if err != nil {
 					fmt.Println(err)

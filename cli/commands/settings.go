@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"TimeTrack/core/database"
-	"TimeTrack/core/settings"
+	"TimeTrack/database"
+	"TimeTrack/settings"
 	"strconv"
 
 	"github.com/dgraph-io/badger/v4"

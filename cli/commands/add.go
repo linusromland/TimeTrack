@@ -1,11 +1,11 @@
 package commands
 
 import (
-	cliUtils "TimeTrack/cli/utils"
+	cliUtils "TimeTrack/utils"
 
-	"TimeTrack/core/calendar"
-	"TimeTrack/core/database"
-	"TimeTrack/core/utils"
+	"TimeTrack/calendar"
+	"TimeTrack/database"
+	"TimeTrack/utils"
 
 	"fmt"
 	"time"

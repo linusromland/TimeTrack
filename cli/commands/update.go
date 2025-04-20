@@ -1,9 +1,9 @@
 package commands
 
 import (
-	cliUtils "TimeTrack/cli/utils"
+	cliUtils "TimeTrack/utils"
 
-	"TimeTrack/core/utils"
+	"TimeTrack/utils"
 
 	"fmt"
 

@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"TimeTrack/core/calendar"
-	"TimeTrack/core/database"
-	"TimeTrack/core/utils"
+	"TimeTrack/calendar"
+	"TimeTrack/database"
+	"TimeTrack/utils"
 
 	"fmt"
 	"os"
@@ -169,11 +169,11 @@ type TicketDuration struct {
 }
 
 type Duration struct {
-	period   string
-	sortkey  string
-	duration int64
+	period     string
+	sortkey    string
+	duration   int64
 	difference int64
-	days []string
+	days       []string
 }
 
 func googleEventsToEvents(events *googleCalendar.Events) []Event {
@@ -380,7 +380,7 @@ func printEvents(events []Event, startDate, endDate time.Time, unit string) {
 
 	// int64
 	totalDifference := int64(0)
-	isNotDay := unit != "day";
+	isNotDay := unit != "day"
 
 	// Print total time per unit
 	if isNotDay {
@@ -452,13 +452,13 @@ func getDurationsPerUnit(events []Event, unit string) []Duration {
 }
 
 func appendIfMissing(durationArray []Duration, duration Duration, day string) []Duration {
-	averageDay := 8 * 60 * 60; // 8 hours in seconds
+	averageDay := 8 * 60 * 60 // 8 hours in seconds
 
 	for i, d := range durationArray {
 		if d.period == duration.period {
 			durationArray[i].duration += duration.duration
 			durationArray[i].days = appendIfMissingDays(durationArray[i].days, day)
-			
+
 			expectedWorkingTime := averageDay * len(durationArray[i].days)
 			durationArray[i].difference = durationArray[i].duration - int64(expectedWorkingTime)
 

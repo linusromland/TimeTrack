@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"TimeTrack/core/database"
+	"TimeTrack/database"
 
 	"encoding/json"
 	"fmt"

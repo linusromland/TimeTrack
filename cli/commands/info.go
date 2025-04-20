@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"TimeTrack/core/database"
-	"TimeTrack/core/utils"
+	"TimeTrack/database"
+	"TimeTrack/utils"
 
 	"fmt"
 	"time"
