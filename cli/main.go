@@ -2,8 +2,6 @@ package main
 
 import (
 	"TimeTrack-cli/commands"
-	"TimeTrack-cli/database"
-	"TimeTrack-cli/utils"
 
 	"fmt"
 	"os"
@@ -16,7 +14,6 @@ var (
 )
 
 func main() {
-	checkForUpdate()
 
 	app := &cli.App{
 		Name:     "TimeTrack",
@@ -30,33 +27,3 @@ func main() {
 	}
 }
 
-func checkForUpdate() {
-	updateAvailable, err := utils.CheckForUpdate(version)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if updateAvailable != "" {
-		db, err := database.OpenDB()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		fmt.Printf("There is a new version of TimeTrack available: %s\n", updateAvailable)
-
-		// Check if the user has skipped this update.
-		skipUpdate := database.GetData(db, database.SKIP_UPDATE)
-		if skipUpdate == updateAvailable {
-			if utils.Confirm("Do you want to update?") {
-				err = utils.UpdateVersion(updateAvailable)
-				if err != nil {
-					fmt.Println(err)
-				}
-			} else {
-				fmt.Println("Skipping this update, you can update later by running 'timetrack update'.")
-				database.SetData(db, database.SKIP_UPDATE, updateAvailable)
-			}
-		}
-		database.CloseDB(db)
-	}
-}
