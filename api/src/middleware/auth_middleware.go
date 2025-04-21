@@ -48,31 +48,3 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func IntegrationAuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		integrationTokenString := c.GetHeader("Authorization")
-		if integrationTokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Integration token is required"})
-			c.Abort()
-			return
-		}
-
-		integrationTokenString = strings.Replace(integrationTokenString, "Bearer ", "", 1)
-
-		integrationSecret := os.Getenv("INTEGRATION_SECRET")
-		token, err := jwt.Parse(integrationTokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(integrationSecret), nil
-		})
-
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired integration token"})
-			c.Abort()
-			return
-		}
-
-		c.Next()
-	}
-}

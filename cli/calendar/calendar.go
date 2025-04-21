@@ -1,7 +1,7 @@
 package calendar
 
 import (
-	"TimeTrack/oauth"
+	"TimeTrack-cli/oauth"
 	"context"
 	"fmt"
 

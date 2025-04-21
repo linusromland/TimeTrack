@@ -1,9 +1,7 @@
 package commands
 
 import (
-	cliUtils "TimeTrack/utils"
-
-	"TimeTrack/utils"
+	"TimeTrack-cli/utils"
 
 	"fmt"
 
@@ -27,7 +25,7 @@ var UpdateCommand = &cli.Command{
 			return nil
 		}
 
-		if cliUtils.Confirm("Do you want to update?") {
+		if utils.Confirm("Do you want to update?") {
 			err = utils.UpdateVersion(updateAvailable)
 			if err != nil {
 				fmt.Println(err)

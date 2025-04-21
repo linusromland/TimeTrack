@@ -1,8 +1,8 @@
 package settings
 
 import (
-	"TimeTrack/calendar"
-	"TimeTrack/database"
+	"TimeTrack-cli/calendar"
+	"TimeTrack-cli/database"
 	"fmt"
 
 	badger "github.com/dgraph-io/badger/v4"

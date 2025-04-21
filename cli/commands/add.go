@@ -1,11 +1,9 @@
 package commands
 
 import (
-	cliUtils "TimeTrack/utils"
-
-	"TimeTrack/calendar"
-	"TimeTrack/database"
-	"TimeTrack/utils"
+	"TimeTrack-cli/calendar"
+	"TimeTrack-cli/database"
+	"TimeTrack-cli/utils"
 
 	"fmt"
 	"time"
@@ -92,7 +90,7 @@ var AddCommand = &cli.Command{
 		startTime := fmt.Sprintf("%sT%s:00+02:00", c.String("date"), c.String("start"))
 		endTime := fmt.Sprintf("%sT%s:00+02:00", endDate, c.String("end"))
 
-		if c.Bool("skipConfirmation") || cliUtils.Confirm("This will create a new task with the following information:\nName: "+c.String("name")+"\nStart: "+utils.FormatDate(startTime, time.RFC3339)+"\nEnd: "+utils.FormatDate(endTime, time.RFC3339)+"\n\nAre you sure?") {
+		if c.Bool("skipConfirmation") || utils.Confirm("This will create a new task with the following information:\nName: "+c.String("name")+"\nStart: "+utils.FormatDate(startTime, time.RFC3339)+"\nEnd: "+utils.FormatDate(endTime, time.RFC3339)+"\n\nAre you sure?") {
 
 			startTimeParsed, _ := time.Parse(time.RFC3339, startTime)
 			endTimeParsed, _ := time.Parse(time.RFC3339, endTime)

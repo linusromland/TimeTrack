@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"authservice/src/models"
-	"authservice/src/services"
+	"TimeTrack-api/src/models"
+	"TimeTrack-api/src/services"
 )
 
 type UserHandler struct {

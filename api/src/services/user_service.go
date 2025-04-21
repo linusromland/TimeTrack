@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
-	"authservice/src/models"
+	"TimeTrack-api/src/models"
 )
 
 type UserService struct {
