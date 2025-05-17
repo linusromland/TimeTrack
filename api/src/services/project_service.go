@@ -60,3 +60,13 @@ func (s *ProjectService) GetProjects(ctx context.Context, ownerID string, nameFi
 	}
 	return projects, nil
 }
+
+func (s *ProjectService) GetProjectByID(ctx context.Context, id string, ownerId string) (*models.Project, error) {
+	filter := bson.M{"_id": id, "deleted_at": bson.M{"$eq": nil}, "owner_id": ownerId}
+	var project models.Project
+	err := s.projectCollection.FindOne(ctx, filter).Decode(&project)
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
+}

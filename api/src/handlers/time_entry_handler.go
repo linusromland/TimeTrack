@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"TimeTrack-api/src/dtos"
 	"TimeTrack-api/src/models"
 	"TimeTrack-api/src/services"
 	"net/http"
@@ -8,22 +9,54 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type TimeEntryHandler struct {
-	service *services.TimeEntryService
+	service        *services.TimeEntryService
+	projectService *services.ProjectService
 }
 
-func NewTimeEntryHandler(s *services.TimeEntryService) *TimeEntryHandler {
-	return &TimeEntryHandler{service: s}
+func NewTimeEntryHandler(s *services.TimeEntryService, ps *services.ProjectService) *TimeEntryHandler {
+	return &TimeEntryHandler{service: s, projectService: ps}
 }
 
 func (h *TimeEntryHandler) Create(c *gin.Context) {
-	var entry models.TimeEntry
-	if err := c.ShouldBindJSON(&entry); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+	var input dtos.CreateTimeEntryInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
+
+	// Validate project ID
+	_, err := h.projectService.GetProjectByID(c, input.ProjectID, c.GetString("user_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
+		return
+	}
+
+	// Calculate duration
+	duration := input.Period.End.Sub(input.Period.Start)
+	if duration < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "End time must be after start time"})
+		return
+	}
+	i := int(duration.Seconds())
+	if i < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Duration must be positive"})
+		return
+	}
+
+	entry := models.TimeEntry{
+		ProjectID: input.ProjectID,
+		Period: models.TimePeriod{
+			Started:  input.Period.Start,
+			Ended:    input.Period.End,
+			Duration: i,
+		},
+		Note: input.Note,
+	}
+
 	entry.OwnerID = c.GetString("user_id")
 
 	if err := h.service.CreateTimeEntry(c, &entry); err != nil {
@@ -35,11 +68,46 @@ func (h *TimeEntryHandler) Create(c *gin.Context) {
 
 func (h *TimeEntryHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	var update map[string]interface{}
-	if err := c.ShouldBindJSON(&update); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+
+	var input dtos.UpdateTimeEntryInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
+
+	// Validate project ID
+	if input.ProjectID != nil {
+		_, err := h.projectService.GetProjectByID(c, *input.ProjectID, c.GetString("user_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid project ID"})
+			return
+		}
+	}
+
+	// Update duration
+	if input.Period != nil {
+		duration := input.Period.End.Sub(input.Period.Start)
+		if duration < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "End time must be after start time"})
+			return
+		}
+		i := int(duration.Seconds())
+		if i < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Duration must be positive"})
+			return
+		}
+	}
+
+	update := bson.M{}
+	if input.ProjectID != nil {
+		update["project_id"] = *input.ProjectID
+	}
+	if input.Period != nil {
+		update["period.started"] = input.Period.Start
+		update["period.ended"] = input.Period.End
+		update["period.duration"] = int(input.Period.End.Sub(input.Period.Start).Seconds())
+	}
+
 	if err := h.service.UpdateTimeEntry(c, id, update); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
 		return

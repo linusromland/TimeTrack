@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"TimeTrack-api/src/dtos"
 	"TimeTrack-api/src/models"
 	"TimeTrack-api/src/services"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type ProjectHandler struct {
@@ -18,11 +21,18 @@ func NewProjectHandler(s *services.ProjectService) *ProjectHandler {
 }
 
 func (h *ProjectHandler) Create(c *gin.Context) {
-	var project models.Project
-	if err := c.ShouldBindJSON(&project); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+	var input dtos.CreateProjectInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
+
+	project := models.Project{
+		Name:        input.Name,
+		Integration: models.IntegrationInfo(input.Integration),
+		OwnerID:     c.GetString("user_id"),
+	}
+	
 	project.OwnerID = c.GetString("user_id")
 
 	if err := h.service.CreateProject(c, &project); err != nil {
@@ -34,11 +44,29 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 
 func (h *ProjectHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	var update map[string]interface{}
-	if err := c.ShouldBindJSON(&update); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+	
+	var input dtos.UpdateProjectInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
+	update := bson.M{}
+	if input.Name != nil {
+		update["name"] = *input.Name
+	}
+	if input.Integration != nil {
+		update["integration"] = models.IntegrationInfo(*input.Integration)
+	}
+	update["owner_id"] = c.GetString("user_id")
+	update["updated_at"] = time.Now()
+	update["deleted_at"] = nil
+	
+	_, err := h.service.GetProjectByID(c, id, c.GetString("user_id"))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		return
+	}
+
 	if err := h.service.UpdateProject(c, id, update); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
 		return

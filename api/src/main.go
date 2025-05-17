@@ -27,11 +27,13 @@ func main() {
 	// Initialize services
 	userService := services.NewUserService(database.AuthDatabase)
 	tokenService := services.NewTokenService(database.AuthDatabase, cfg.JWTSecret)
+	projectService := services.NewProjectService(database.AuthDatabase)
+	timeEntryService := services.NewTimeEntryService(database.AuthDatabase)
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService, tokenService)
-	projectHandler := handlers.NewProjectHandler(services.NewProjectService(database.AuthDatabase))
-	timeEntryHandler := handlers.NewTimeEntryHandler(services.NewTimeEntryService(database.AuthDatabase))
+	projectHandler := handlers.NewProjectHandler(projectService)
+	timeEntryHandler := handlers.NewTimeEntryHandler(timeEntryService, projectService)
 
 	// Setup Gin router
 	r := gin.Default()
