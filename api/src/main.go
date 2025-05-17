@@ -24,7 +24,8 @@ func main() {
 	// Initialize services
 	userService := services.NewUserService(database.AuthDatabase)
 	tokenService := services.NewTokenService(database.AuthDatabase, cfg.JWTSecret)
-	projectService := services.NewProjectService(database.AuthDatabase)
+	atlassianService := services.NewAtlassianService(cfg.AtlassianConfig, *userService)
+	projectService := services.NewProjectService(database.AuthDatabase, atlassianService)
 	timeEntryService := services.NewTimeEntryService(database.AuthDatabase)
 
 	// Initialize handlers
@@ -43,9 +44,22 @@ func main() {
 
 		// Authentication routes
 		authGroup := apiV1.Group("/")
+
+		// Oauth Callback routes
+		authGroup.GET("/user/oauth/atlassian/callback", atlassianService.HandleOAuthCallback)
+
+
 		authGroup.Use(middleware.AuthMiddleware())
 		{
-			authGroup.GET("/user", userHandler.GetUser)
+			userGroup := authGroup.Group("/user")
+			{
+				userGroup.GET("/", userHandler.GetUser)
+
+				oauthGroup := userGroup.Group("/oauth")
+				{
+					oauthGroup.GET("/atlassian", atlassianService.GetOAuthURL)
+				}
+			}
 
 			// Project routes
 			authGroup.POST("/projects", projectHandler.Create)

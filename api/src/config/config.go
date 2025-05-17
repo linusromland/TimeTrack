@@ -7,11 +7,19 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type AtlassianConfig struct {
+	Audience     string
+	ClientId     string
+	ClientSecret string
+	Scope        string
+	CallbackUrl  string
+}
+
 type Config struct {
-	MongoURI          string
-	Port              string
-	JWTSecret         string
-	IntegrationSecret string
+	MongoURI        string
+	Port            string
+	JWTSecret       string
+	AtlassianConfig AtlassianConfig
 }
 
 var AppConfig *Config
@@ -23,10 +31,16 @@ func LoadConfig() *Config {
 	}
 
 	cfg := &Config{
-		MongoURI:          os.Getenv("MONGO_URI"),
-		Port:              os.Getenv("PORT"),
-		JWTSecret:         os.Getenv("JWT_SECRET"),
-		IntegrationSecret: os.Getenv("INTEGRATION_SECRET"),
+		MongoURI:  os.Getenv("MONGO_URI"),
+		Port:      os.Getenv("PORT"),
+		JWTSecret: os.Getenv("JWT_SECRET"),
+		AtlassianConfig: AtlassianConfig{
+			Audience:     os.Getenv("ATLASSIAN_AUDIENCE"),
+			ClientId:     os.Getenv("ATLASSIAN_CLIENT_ID"),
+			ClientSecret: os.Getenv("ATLASSIAN_CLIENT_SECRET"),
+			Scope:        os.Getenv("ATLASSIAN_SCOPE"),
+			CallbackUrl:  os.Getenv("ATLASSIAN_CALLBACK_URL"),
+		},
 	}
 	AppConfig = cfg
 	return cfg
@@ -43,7 +57,19 @@ func CheckRequiredVariables(cfg *Config) {
 	if cfg.JWTSecret == "" {
 		log.Fatal("JWT_SECRET environment variable is not defined")
 	}
-	if cfg.IntegrationSecret == "" {
-		log.Fatal("INTEGRATION_SECRET environment variable is not defined")
+	if cfg.AtlassianConfig.Audience == "" {
+		log.Fatal("ATLASSIAN_AUDIENCE environment variable is not defined")
+	}
+	if cfg.AtlassianConfig.ClientId == "" {
+		log.Fatal("ATLASSIAN_CLIENT_ID environment variable is not defined")
+	}
+	if cfg.AtlassianConfig.ClientSecret == "" {
+		log.Fatal("ATLASSIAN_CLIENT_SECRET environment variable is not defined")
+	}
+	if cfg.AtlassianConfig.Scope == "" {
+		log.Fatal("ATLASSIAN_SCOPE environment variable is not defined")
+	}
+	if cfg.AtlassianConfig.CallbackUrl == "" {
+		log.Fatal("ATLASSIAN_CALLBACK_URL environment variable is not defined")
 	}
 }

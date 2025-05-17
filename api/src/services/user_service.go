@@ -31,7 +31,8 @@ func (s *UserService) RegisterUser(c *gin.Context, user *models.User) error {
 	}
 
 	user.Password = string(hashedPassword)
-	user.DeletedAt = time.Time{}
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 	user.ID = uuid.New().String()
 
 	_, err = s.userCollection.InsertOne(context.TODO(), user)
@@ -56,6 +57,20 @@ func (s *UserService) LoginUser(c *gin.Context, loginData *models.User) (*models
 
 func (s *UserService) GetUserByID(c *gin.Context, userID string) (*models.User, error) {
 	var user models.User
-	err := s.userCollection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0})).Decode(&user)
+	err := s.userCollection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0, "integration": 0})).Decode(&user)
 	return &user, err
+}
+
+func (s *UserService) UpdateIntegration(c *gin.Context, userID string, integrationType string, integration models.UserIntegration) error {
+	_, err := s.userCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"integration": integration}})
+	return err
+}
+
+func (s *UserService) GetAtlassianIntegration(userID string) (*models.AtlassianIntegration, error) {
+	var user models.User
+	err := s.userCollection.FindOne(context.TODO(), bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user.Integration.Atlassian, nil
 }
