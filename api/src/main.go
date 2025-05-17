@@ -49,7 +49,7 @@ func main() {
 		authGroup.Use(middleware.AuthMiddleware())
 		{
 			authGroup.GET("/user", userHandler.GetUser)
-			
+
 			// Project routes
 			authGroup.POST("/projects", projectHandler.Create)
 			authGroup.PUT("/projects/:id", projectHandler.Update)
@@ -57,7 +57,7 @@ func main() {
 			authGroup.GET("/projects", projectHandler.List)
 
 			// Time Entry routes
-			authGroup.POST("/time-entries", timeEntryHandler.Create)	
+			authGroup.POST("/time-entries", timeEntryHandler.Create)
 			authGroup.PUT("/time-entries/:id", timeEntryHandler.Update)
 			authGroup.DELETE("/time-entries/:id", timeEntryHandler.Delete)
 			authGroup.GET("/time-entries", timeEntryHandler.List)

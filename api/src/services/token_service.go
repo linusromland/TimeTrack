@@ -8,12 +8,12 @@ import (
 )
 
 type TokenService struct {
-	jwtSecret       string
+	jwtSecret string
 }
 
 func NewTokenService(db *mongo.Database, jwtSecret string) *TokenService {
 	return &TokenService{
-		jwtSecret:       jwtSecret,
+		jwtSecret: jwtSecret,
 	}
 }
 
@@ -25,4 +25,3 @@ func (s *TokenService) GenerateAuthToken(userID, email string) (string, error) {
 	})
 	return token.SignedString([]byte(s.jwtSecret))
 }
-

@@ -32,7 +32,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 		Integration: models.IntegrationInfo(input.Integration),
 		OwnerID:     c.GetString("user_id"),
 	}
-	
+
 	project.OwnerID = c.GetString("user_id")
 
 	if err := h.service.CreateProject(c, &project); err != nil {
@@ -44,7 +44,7 @@ func (h *ProjectHandler) Create(c *gin.Context) {
 
 func (h *ProjectHandler) Update(c *gin.Context) {
 	id := c.Param("id")
-	
+
 	var input dtos.UpdateProjectInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
@@ -60,7 +60,7 @@ func (h *ProjectHandler) Update(c *gin.Context) {
 	update["owner_id"] = c.GetString("user_id")
 	update["updated_at"] = time.Now()
 	update["deleted_at"] = nil
-	
+
 	_, err := h.service.GetProjectByID(c, id, c.GetString("user_id"))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
