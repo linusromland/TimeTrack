@@ -1,6 +1,6 @@
 {
     "version": "1",
-    "name": "auth-service",
+    "name": "timetrack-api",
     "type": "collection",
     "ignore": [
         ".git"

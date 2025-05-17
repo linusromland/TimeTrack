@@ -1,0 +1,25 @@
+meta {
+  name: Delete Time Entry
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{URL}}/time-entries/:timeEntryId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  timeEntryId: 
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "name": "Amended"
+  }
+}

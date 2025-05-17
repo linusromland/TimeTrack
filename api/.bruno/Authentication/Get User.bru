@@ -1,21 +1,17 @@
 meta {
   name: Get User
   type: http
-  seq: 1
+  seq: 3
 }
 
 get {
-  url: {{URL}}/integration/user?user_token={{user_token}}
+  url: {{URL}}/user
   body: none
   auth: bearer
 }
 
-params:query {
-  user_token: {{user_token}}
-}
-
 auth:bearer {
-  token: {{INTEGRATION_TOKEN}}
+  token: {{jwt_token}}
 }
 
 body:json {
