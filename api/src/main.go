@@ -30,6 +30,8 @@ func main() {
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService, tokenService)
+	projectHandler := handlers.NewProjectHandler(services.NewProjectService(database.AuthDatabase))
+	timeEntryHandler := handlers.NewTimeEntryHandler(services.NewTimeEntryService(database.AuthDatabase))
 
 	// Setup Gin router
 	r := gin.Default()
@@ -41,10 +43,22 @@ func main() {
 		apiV1.POST("/login", userHandler.LoginUser)
 
 		// Authentication routes
-		authGroup := apiV1.Group("/auth")
+		authGroup := apiV1.Group("/")
 		authGroup.Use(middleware.AuthMiddleware())
 		{
 			authGroup.GET("/user", userHandler.GetUser)
+			
+			// Project routes
+			authGroup.POST("/projects", projectHandler.Create)
+			authGroup.PUT("/projects/:id", projectHandler.Update)
+			authGroup.DELETE("/projects/:id", projectHandler.Delete)
+			authGroup.GET("/projects", projectHandler.List)
+
+			// Time Entry routes
+			authGroup.POST("/time-entries", timeEntryHandler.Create)	
+			authGroup.PUT("/time-entries/:id", timeEntryHandler.Update)
+			authGroup.DELETE("/time-entries/:id", timeEntryHandler.Delete)
+			authGroup.GET("/time-entries", timeEntryHandler.List)
 		}
 	}
 
