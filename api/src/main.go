@@ -17,9 +17,6 @@ func main() {
 	cfg := config.LoadConfig()
 	config.CheckRequiredVariables(cfg)
 
-	// Setup Google OAuth config
-	config.SetupGoogleOAuthConfig(cfg)
-
 	// Connect to MongoDB
 	database.ConnectDB(cfg.MongoURI)
 	defer database.DisconnectDB()
