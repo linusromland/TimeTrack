@@ -48,7 +48,6 @@ func main() {
 		// Oauth Callback routes
 		authGroup.GET("/user/oauth/atlassian/callback", atlassianService.HandleOAuthCallback)
 
-
 		authGroup.Use(middleware.AuthMiddleware())
 		{
 			userGroup := authGroup.Group("/user")

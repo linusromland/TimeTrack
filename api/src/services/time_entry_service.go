@@ -14,15 +14,15 @@ import (
 
 type TimeEntryService struct {
 	timeEntryCollection *mongo.Collection
-	projectService *ProjectService
-	atlassianService *AtlassianService
+	projectService      *ProjectService
+	atlassianService    *AtlassianService
 }
 
 func NewTimeEntryService(db *mongo.Database, ps *ProjectService, as *AtlassianService) *TimeEntryService {
 	return &TimeEntryService{
 		timeEntryCollection: db.Collection("time_entries"),
-		projectService: ps,
-		atlassianService: as,
+		projectService:      ps,
+		atlassianService:    as,
 	}
 }
 
@@ -48,7 +48,6 @@ func (s *TimeEntryService) CreateTimeEntry(ctx context.Context, entry *models.Ti
 			}
 		}
 	}
-
 
 	entry.ID = uuid.New().String()
 	entry.CreatedAt = time.Now()

@@ -13,21 +13,21 @@ import (
 
 type ProjectService struct {
 	projectCollection *mongo.Collection
-	atlassianService *AtlassianService
+	atlassianService  *AtlassianService
 }
 
 func NewProjectService(db *mongo.Database, as *AtlassianService) *ProjectService {
 	return &ProjectService{
 		projectCollection: db.Collection("projects"),
-		atlassianService: as,
+		atlassianService:  as,
 	}
 }
 
 func (s *ProjectService) CreateProject(ctx context.Context, project *models.Project) error {
 	// This should be moved to settings later
-	 AUTO_LINK_TO_JIRA := true;
+	AUTO_LINK_TO_JIRA := true
 
-	 if AUTO_LINK_TO_JIRA {
+	if AUTO_LINK_TO_JIRA {
 		err := s.atlassianService.CheckIfJiraTicketExists(project.OwnerID, project.Name)
 		if err == nil {
 			project.Integration = models.IntegrationInfo{
@@ -36,7 +36,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, project *models.Proj
 				ExternalID: project.Name,
 			}
 		}
-	 }
+	}
 
 	project.ID = uuid.New().String()
 	project.CreatedAt = time.Now()
