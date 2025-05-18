@@ -4,6 +4,7 @@ import (
 	"TimeTrack-api/src/config"
 	"TimeTrack-api/src/models"
 	"encoding/json"
+	"errors"
 	"log"
 	"strings"
 
@@ -114,6 +115,67 @@ func (s *AtlassianService) HandleOAuthCallback(c *gin.Context) {
 
 }
 
+// TODO: Add support fo specifiying what cloud the user wants to connect to, and also save the cloud id in the database
+func (s *AtlassianService) GetCloudId(userId string) (string, error) {
+	log.Println("Fetching cloud ID from Atlassian")
+
+	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
+	if err != nil {
+		log.Println("Error fetching Atlassian integration:", err)
+		return "", err
+	}
+	if !atlassianIntegration.Enabled {
+		log.Println("Atlassian integration is not enabled for user:", userId)
+		return "", nil
+	}
+	if atlassianIntegration.AccessToken == "" {
+		log.Println("Access token is empty for user:", userId)
+		return "", nil
+	}
+
+	// Make request to get the cloud ID
+	cloudIdUrl := "https://api.atlassian.com/oauth/token/accessible-resources"
+	req, err := http.NewRequest("GET", cloudIdUrl, nil)
+	if err != nil {
+		log.Println("Error creating request:", err)
+		return "", err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+atlassianIntegration.AccessToken)
+	req.Header.Set("Accept", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Error response from Atlassian:", resp.StatusCode)
+		return "", err
+	}
+	var resources []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&resources); err != nil {
+		log.Println("Error decoding response:", err)
+		return "", err
+	}
+	// Extract the cloud ID from the response
+	if len(resources) == 0 {
+		log.Println("No resources found in response")
+		return "", nil
+	}
+
+	log.Println("Resources found:", resources)
+
+	cloudId, ok := resources[0]["id"].(string)
+	if !ok {
+		log.Println("Cloud ID not found in response")
+		return "", nil
+	}
+	log.Println("Cloud ID found:", cloudId)
+	return cloudId, nil	
+}
+
 func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId string) error {
 	log.Println("Fetching ticket info from Atlassian")
 
@@ -124,14 +186,20 @@ func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId strin
 	}
 	if !atlassianIntegration.Enabled {
 		log.Println("Atlassian integration is not enabled for user:", userId)
-		return nil
+		return errors.New("atlassian integration is not enabled")
 	}
 	if atlassianIntegration.AccessToken == "" {
 		log.Println("Access token is empty for user:", userId)
-		return nil
+		return errors.New("access token is empty")
+	}	
+
+	cloudId, err := s.GetCloudId(userId)
+	if err != nil {
+		log.Println("Error fetching cloud ID:", err)
+		return err
 	}
 
-	jiraUrl := "https://api.atlassian.com/ex/jira/" + s.config.Audience + "/rest/api/2/issue/" + ticketId
+	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/3/issue/" + ticketId
 	req, err := http.NewRequest("GET", jiraUrl, nil)
 	if err != nil {
 		log.Println("Error creating request:", err)
@@ -149,7 +217,7 @@ func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId strin
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		log.Println("Error response from Atlassian:", resp.StatusCode)
-		return err
+		return errors.New("ticket not found")
 	}
 
 	var ticketInfo map[string]interface{}
@@ -158,10 +226,9 @@ func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId strin
 		return err
 	}
 
-	// Check if the ticket exists
 	if _, ok := ticketInfo["key"]; !ok {
 		log.Println("Ticket not found:", ticketId)
-		return err
+		return errors.New("ticket not found")
 	}
 	log.Println("Ticket found:", ticketId)
 	return nil
