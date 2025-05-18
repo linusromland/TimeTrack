@@ -26,7 +26,7 @@ func main() {
 	tokenService := services.NewTokenService(database.AuthDatabase, cfg.JWTSecret)
 	atlassianService := services.NewAtlassianService(cfg.AtlassianConfig, *userService)
 	projectService := services.NewProjectService(database.AuthDatabase, atlassianService)
-	timeEntryService := services.NewTimeEntryService(database.AuthDatabase)
+	timeEntryService := services.NewTimeEntryService(database.AuthDatabase, projectService, atlassianService)
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService, tokenService)

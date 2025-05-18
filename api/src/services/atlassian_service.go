@@ -173,7 +173,7 @@ func (s *AtlassianService) GetCloudId(userId string) (string, error) {
 		return "", nil
 	}
 	log.Println("Cloud ID found:", cloudId)
-	return cloudId, nil	
+	return cloudId, nil
 }
 
 func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId string) error {
@@ -191,7 +191,7 @@ func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId strin
 	if atlassianIntegration.AccessToken == "" {
 		log.Println("Access token is empty for user:", userId)
 		return errors.New("access token is empty")
-	}	
+	}
 
 	cloudId, err := s.GetCloudId(userId)
 	if err != nil {
@@ -232,4 +232,74 @@ func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId strin
 	}
 	log.Println("Ticket found:", ticketId)
 	return nil
+}
+
+func (s *AtlassianService) AddTimeEntryToJira(entry *models.TimeEntry, ticketId string) (string, error) {
+	log.Println("Adding time entry to Jira")
+
+	userId := entry.OwnerID
+
+	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
+	if err != nil {
+		log.Println("Error fetching Atlassian integration:", err)
+		return "", err
+	}
+	if !atlassianIntegration.Enabled {
+		log.Println("Atlassian integration is not enabled for user:", userId)
+		return "", errors.New("atlassian integration is not enabled")
+	}
+	if atlassianIntegration.AccessToken == "" {
+		log.Println("Access token is empty for user:", userId)
+		return "", errors.New("access token is empty")
+	}
+
+	cloudId, err := s.GetCloudId(userId)
+	if err != nil {
+		log.Println("Error fetching cloud ID:", err)
+		return "", err
+	}
+
+	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/2/issue/" + ticketId + "/worklog"
+	reqBody := map[string]interface{}{
+		"comment":          entry.Note,
+		"timeSpentSeconds": entry.Period.Duration,
+	}
+	reqBodyJson, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest("POST", jiraUrl, strings.NewReader(string(reqBodyJson)))
+	if err != nil {
+		log.Println("Error creating request:", err)
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+atlassianIntegration.AccessToken)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending request:", err)
+		return "", err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		log.Println("Error response from Atlassian:", resp.StatusCode)
+		return "", errors.New("failed to add time entry to Jira")
+	}
+
+	var worklogResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&worklogResponse); err != nil {
+		log.Println("Error decoding response:", err)
+		return "", err
+	}
+
+	worklogId, ok := worklogResponse["id"].(string)
+	if !ok {
+		log.Println("Worklog ID not found in response")
+		return "", errors.New("worklog ID not found")
+	}
+
+	log.Println("Worklog ID found:",
+		worklogId)
+	return worklogId, nil
 }
