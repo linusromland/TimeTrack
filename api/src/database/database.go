@@ -9,7 +9,7 @@ import (
 )
 
 var MongoClient *mongo.Client
-var AuthDatabase *mongo.Database
+var Database *mongo.Database
 
 func ConnectDB(mongoURI string) *mongo.Client {
 	clientOptions := options.Client().ApplyURI(mongoURI)
@@ -23,12 +23,12 @@ func ConnectDB(mongoURI string) *mongo.Client {
 	}
 	log.Println("Connected to MongoDB")
 	MongoClient = client
-	AuthDatabase = client.Database("auth_service")
+	Database = client.Database("timetrack_api")
 	return client
 }
 
 func GetCollection(collectionName string) *mongo.Collection {
-	return AuthDatabase.Collection(collectionName)
+	return Database.Collection(collectionName)
 }
 
 func DisconnectDB() {

@@ -22,11 +22,11 @@ func main() {
 	defer database.DisconnectDB()
 
 	// Initialize services
-	userService := services.NewUserService(database.AuthDatabase)
-	tokenService := services.NewTokenService(database.AuthDatabase, cfg.JWTSecret)
+	userService := services.NewUserService(database.Database)
+	tokenService := services.NewTokenService(database.Database, cfg.JWTSecret)
 	atlassianService := services.NewAtlassianService(cfg.AtlassianConfig, *userService)
-	projectService := services.NewProjectService(database.AuthDatabase, atlassianService)
-	timeEntryService := services.NewTimeEntryService(database.AuthDatabase, projectService, atlassianService)
+	projectService := services.NewProjectService(database.Database, atlassianService)
+	timeEntryService := services.NewTimeEntryService(database.Database, projectService, atlassianService)
 
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(userService, tokenService)
