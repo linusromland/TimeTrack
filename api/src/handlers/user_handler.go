@@ -28,6 +28,17 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	existingUser, err := h.userService.GetUserByEmail(c, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking existing user"})
+		return
+	}
+
+	if existingUser != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+		return
+	}
+
 	if err := h.userService.RegisterUser(c, &user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return

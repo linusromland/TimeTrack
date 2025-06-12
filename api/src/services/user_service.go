@@ -61,6 +61,18 @@ func (s *UserService) GetUserByID(c *gin.Context, userID string) (*models.User, 
 	return &user, err
 }
 
+func (s *UserService) GetUserByEmail(c *gin.Context, email string) (*models.User, error) {
+	var user models.User
+	err := s.userCollection.FindOne(context.TODO(), bson.M{"email": email}, options.FindOne().SetProjection(bson.M{"password": 0, "integration": 0})).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil // User not found
+		}
+		return nil, err // Other error
+	}
+	return &user, nil
+}
+
 func (s *UserService) UpdateIntegration(c *gin.Context, userID string, integrationType string, integration models.UserIntegration) error {
 	_, err := s.userCollection.UpdateOne(context.TODO(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"integration": integration}})
 	return err
