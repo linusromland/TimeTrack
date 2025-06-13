@@ -1,0 +1,9 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: Time tracking API for managing projects and time entries.
+  title: TimeTrack API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

@@ -4,6 +4,10 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "TimeTrack-api/src/docs" // Import the generated docs
 
 	"TimeTrack-api/src/config"
 	"TimeTrack-api/src/database"
@@ -12,6 +16,11 @@ import (
 	"TimeTrack-api/src/services"
 )
 
+// @title TimeTrack API
+// @version 1.0
+// @description Time tracking API for managing projects and time entries.
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	// Load and check configuration
 	cfg := config.LoadConfig()
@@ -35,6 +44,10 @@ func main() {
 
 	// Setup Gin router
 	r := gin.Default()
+
+	// Serve Swagger UI
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 
 	// Versioned API path `/api/v1`
 	apiV1 := r.Group("/api/v1")
