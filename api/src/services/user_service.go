@@ -14,6 +14,15 @@ import (
 	"TimeTrack-api/src/models"
 )
 
+var userProjection = bson.M{
+	"_id":        1,
+	"email":      1,
+	"firstName":  1,
+	"lastName":   1,
+	"createdAt":  1,
+	"updatedAt":  1,
+}
+
 type UserService struct {
 	userCollection *mongo.Collection
 }
@@ -57,13 +66,13 @@ func (s *UserService) LoginUser(c *gin.Context, loginData *models.User) (*models
 
 func (s *UserService) GetUserByID(c *gin.Context, userID string) (*models.User, error) {
 	var user models.User
-	err := s.userCollection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(bson.M{"password": 0, "integration": 0})).Decode(&user)
+	err := s.userCollection.FindOne(context.TODO(), bson.M{"_id": userID}, options.FindOne().SetProjection(userProjection)).Decode(&user)
 	return &user, err
 }
 
 func (s *UserService) GetUserByEmail(c *gin.Context, email string) (*models.User, error) {
 	var user models.User
-	err := s.userCollection.FindOne(context.TODO(), bson.M{"email": email}, options.FindOne().SetProjection(bson.M{"password": 0, "integration": 0})).Decode(&user)
+	err := s.userCollection.FindOne(context.TODO(), bson.M{"email": email}, options.FindOne().SetProjection(userProjection)).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil // User not found

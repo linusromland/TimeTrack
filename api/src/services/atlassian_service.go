@@ -3,8 +3,10 @@ package services
 import (
 	"TimeTrack-api/src/config"
 	"TimeTrack-api/src/models"
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"strings"
 
@@ -14,16 +16,86 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type AtlassianAPIErr struct {
+	Error        string        `json:"error"`
+	ErrorMessage string        `json:"errorMessage"`
+	ErrorMessages []string      `json:"errorMessages"`
+}
+
 type AtlassianService struct {
 	config      config.AtlassianConfig
 	userService *UserService
+	httpClient  *http.Client
 }
 
 func NewAtlassianService(c config.AtlassianConfig, us UserService) *AtlassianService {
 	return &AtlassianService{
 		config:      c,
 		userService: &us,
+		httpClient:  &http.Client{},
 	}
+}
+
+func (s *AtlassianService) makeAtlassianRequest(method, reqURL string, accessToken string, reqBody interface{}, respTarget interface{}) error {
+	var bodyReader io.Reader
+	if reqBody != nil {
+		jsonBody, err := json.Marshal(reqBody)
+		if err != nil {
+			log.Printf("Error marshaling request body: %v", err)
+			return errors.New("failed to marshal request body")
+		}
+		bodyReader = bytes.NewBuffer(jsonBody)
+	} else {
+		bodyReader = nil
+	}
+
+	req, err := http.NewRequest(method, reqURL, bodyReader)
+	if err != nil {
+		log.Printf("Error creating HTTP request for %s %s: %v", method, reqURL, err)
+		return errors.New("failed to create HTTP request")
+	}
+
+	if accessToken != "" {
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+	}
+	req.Header.Set("Accept", "application/json")
+	if reqBody != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		log.Printf("Error sending HTTP request to %s: %v", reqURL, err)
+		return errors.New("failed to send HTTP request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		var apiErr AtlassianAPIErr
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("Atlassian API error response: Status %d, Body: %s", resp.StatusCode, string(bodyBytes))
+
+		if err := json.Unmarshal(bodyBytes, &apiErr); err == nil {
+			if apiErr.Error != "" {
+				return errors.New("Atlassian API error: " + apiErr.Error + " (Status: " + resp.Status + ")")
+			}
+			if apiErr.ErrorMessage != "" {
+				return errors.New("Atlassian API error: " + apiErr.ErrorMessage + " (Status: " + resp.Status + ")")
+			}
+			if len(apiErr.ErrorMessages) > 0 {
+				return errors.New("Atlassian API errors: " + strings.Join(apiErr.ErrorMessages, "; ") + " (Status: " + resp.Status + ")")
+			}
+		}
+		return errors.New("Atlassian API returned status: " + resp.Status)
+	}
+
+	if respTarget != nil {
+		if err := json.NewDecoder(resp.Body).Decode(respTarget); err != nil {
+			log.Printf("Error decoding Atlassian API response from %s: %v", reqURL, err)
+			return errors.New("failed to decode Atlassian API response")
+		}
+	}
+	return nil
 }
 
 func (s *AtlassianService) GetOAuthURL(c *gin.Context) {
@@ -42,7 +114,7 @@ func (s *AtlassianService) GetOAuthURL(c *gin.Context) {
 
 	log.Println("Generated OAuth URL:", oauthURL)
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"oauth_url": oauthURL,
 	})
 }
@@ -54,13 +126,15 @@ func (s *AtlassianService) HandleOAuthCallback(c *gin.Context) {
 	userId := c.Query("state")
 
 	if code == "" || userId == "" {
-		c.JSON(400, gin.H{"error": "Missing code or state"})
+		log.Println("Missing code or state in OAuth callback")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing code or state"})
 		return
 	}
 
 	_, err := s.userService.GetUserByID(c, userId)
 	if err != nil {
-		c.JSON(404, gin.H{"error": "User not found"})
+		log.Printf("User not found for OAuth callback (userId: %s): %v", userId, err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
@@ -71,235 +145,191 @@ func (s *AtlassianService) HandleOAuthCallback(c *gin.Context) {
 	data.Set("client_secret", s.config.ClientSecret)
 	data.Set("code", code)
 	data.Set("redirect_uri", s.config.CallbackUrl)
-	req, err := http.NewRequest("POST", oauthTokenUrl, strings.NewReader(data.Encode()))
+
+	req, err := http.NewRequest(http.MethodPost, oauthTokenUrl, strings.NewReader(data.Encode()))
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to create request"})
+		log.Printf("Error creating token exchange request: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token request"})
 		return
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Failed to send request"})
+		log.Printf("Error sending token exchange request: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send token request"})
 		return
 	}
-
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
-		c.JSON(500, gin.H{"error": "Failed to exchange code for token"})
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Printf("Error response from Atlassian token endpoint: Status %d, Body: %s", resp.StatusCode, string(bodyBytes))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to exchange code for token"})
 		return
 	}
 
 	var tokenResponse map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-		c.JSON(500, gin.H{"error": "Failed to parse response"})
-		return
-	}
-	accessToken, ok := tokenResponse["access_token"].(string)
-	if !ok {
-		c.JSON(500, gin.H{"error": "Access token not found in response"})
+		log.Printf("Error parsing token response: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse token response"})
 		return
 	}
 
-	s.userService.UpdateIntegration(c, userId, "atlassian", models.UserIntegration{
+	accessToken, ok := tokenResponse["access_token"].(string)
+	if !ok {
+		log.Println("Access token not found in response or not a string type assertion failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Access token not found in response"})
+		return
+	}
+
+	err = s.userService.UpdateIntegration(c, userId, "atlassian", models.UserIntegration{
 		Atlassian: models.AtlassianIntegration{
 			Enabled:     true,
 			AccessToken: accessToken,
 		},
 	})
+	if err != nil {
+		log.Printf("Error updating Atlassian integration for user %s: %v", userId, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save Atlassian integration"})
+		return
+	}
 
-	c.JSON(200, gin.H{
+	log.Printf("Authentication with Atlassian successful for user: %s", userId)
+	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Authentication with Atlassian successful. You can now safely close this window.",
 	})
-
 }
 
-// TODO: Add support fo specifiying what cloud the user wants to connect to, and also save the cloud id in the database
 func (s *AtlassianService) GetCloudId(userId string) (string, error) {
-	log.Println("Fetching cloud ID from Atlassian")
+	log.Printf("Fetching cloud ID from Atlassian for user: %s", userId)
 
 	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
 	if err != nil {
-		log.Println("Error fetching Atlassian integration:", err)
+		log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
 		return "", err
 	}
 	if !atlassianIntegration.Enabled {
-		log.Println("Atlassian integration is not enabled for user:", userId)
-		return "", nil
+		return "", errors.New("atlassian integration not enabled for user: " + userId)
 	}
 	if atlassianIntegration.AccessToken == "" {
-		log.Println("Access token is empty for user:", userId)
-		return "", nil
+		return "", errors.New("atlassian access token is empty for user: " + userId)
 	}
 
-	// Make request to get the cloud ID
 	cloudIdUrl := "https://api.atlassian.com/oauth/token/accessible-resources"
-	req, err := http.NewRequest("GET", cloudIdUrl, nil)
-	if err != nil {
-		log.Println("Error creating request:", err)
-		return "", err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+atlassianIntegration.AccessToken)
-	req.Header.Set("Accept", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error sending request:", err)
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Error response from Atlassian:", resp.StatusCode)
-		return "", err
-	}
 	var resources []map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&resources); err != nil {
-		log.Println("Error decoding response:", err)
+	err = s.makeAtlassianRequest(http.MethodGet, cloudIdUrl, atlassianIntegration.AccessToken, nil, &resources)
+	if err != nil {
+		log.Printf("Error making request to get accessible resources for user %s: %v", userId, err)
 		return "", err
 	}
-	// Extract the cloud ID from the response
+
 	if len(resources) == 0 {
-		log.Println("No resources found in response")
-		return "", nil
+		return "", errors.New("no accessible Atlassian resources found for user: " + userId)
 	}
 
-	log.Println("Resources found:", resources)
+	log.Printf("Accessible resources found for user %s: %+v", userId, resources)
 
 	cloudId, ok := resources[0]["id"].(string)
 	if !ok {
-		log.Println("Cloud ID not found in response")
-		return "", nil
+		return "", errors.New("cloud ID not found in the first accessible resource or not a string")
 	}
-	log.Println("Cloud ID found:", cloudId)
+
+	log.Printf("Cloud ID found for user %s: %s", userId, cloudId)
 	return cloudId, nil
 }
 
 func (s *AtlassianService) CheckIfJiraTicketExists(userId string, ticketId string) error {
-	log.Println("Fetching ticket info from Atlassian")
+	log.Printf("Checking Jira ticket existence for user: %s, ticket: %s", userId, ticketId)
 
 	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
 	if err != nil {
-		log.Println("Error fetching Atlassian integration:", err)
+		log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
 		return err
 	}
 	if !atlassianIntegration.Enabled {
-		log.Println("Atlassian integration is not enabled for user:", userId)
-		return errors.New("atlassian integration is not enabled")
+		return errors.New("atlassian integration is not enabled for user: " + userId)
 	}
 	if atlassianIntegration.AccessToken == "" {
-		log.Println("Access token is empty for user:", userId)
-		return errors.New("access token is empty")
+		return errors.New("access token is empty for user: " + userId)
 	}
 
 	cloudId, err := s.GetCloudId(userId)
 	if err != nil {
-		log.Println("Error fetching cloud ID:", err)
+		log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
 		return err
+	}
+	if cloudId == "" {
+		return errors.New("could not determine Atlassian cloud ID for user: " + userId)
 	}
 
 	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/3/issue/" + ticketId
-	req, err := http.NewRequest("GET", jiraUrl, nil)
-	if err != nil {
-		log.Println("Error creating request:", err)
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+atlassianIntegration.AccessToken)
-	req.Header.Set("Accept", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error sending request:", err)
-		return err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Error response from Atlassian:", resp.StatusCode)
-		return errors.New("ticket not found")
-	}
-
 	var ticketInfo map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&ticketInfo); err != nil {
-		log.Println("Error decoding response:", err)
+	err = s.makeAtlassianRequest(http.MethodGet, jiraUrl, atlassianIntegration.AccessToken, nil, &ticketInfo)
+	if err != nil {
+		log.Printf("Error checking Jira ticket %s for user %s: %v", ticketId, userId, err)
+		if strings.Contains(err.Error(), "Status: 404 Not Found") {
+			return errors.New("jira ticket not found: " + ticketId)
+		}
 		return err
 	}
 
 	if _, ok := ticketInfo["key"]; !ok {
-		log.Println("Ticket not found:", ticketId)
-		return errors.New("ticket not found")
+		log.Printf("Ticket key not found in response for Jira ticket: %s", ticketId)
+		return errors.New("jira ticket not found: " + ticketId)
 	}
-	log.Println("Ticket found:", ticketId)
+
+	log.Printf("Jira ticket found: %s for user: %s", ticketId, userId)
 	return nil
 }
 
 func (s *AtlassianService) AddTimeEntryToJira(entry *models.TimeEntry, ticketId string) (string, error) {
-	log.Println("Adding time entry to Jira")
+	log.Printf("Adding time entry to Jira ticket: %s for owner: %s", ticketId, entry.OwnerID)
 
 	userId := entry.OwnerID
 
 	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
 	if err != nil {
-		log.Println("Error fetching Atlassian integration:", err)
+		log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
 		return "", err
 	}
 	if !atlassianIntegration.Enabled {
-		log.Println("Atlassian integration is not enabled for user:", userId)
-		return "", errors.New("atlassian integration is not enabled")
+		return "", errors.New("atlassian integration is not enabled for user: " + userId)
 	}
 	if atlassianIntegration.AccessToken == "" {
-		log.Println("Access token is empty for user:", userId)
-		return "", errors.New("access token is empty")
+		return "", errors.New("access token is empty for user: " + userId)
 	}
 
 	cloudId, err := s.GetCloudId(userId)
 	if err != nil {
-		log.Println("Error fetching cloud ID:", err)
+		log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
 		return "", err
+	}
+	if cloudId == "" {
+		return "", errors.New("could not determine Atlassian cloud ID for user: " + userId)
 	}
 
 	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/2/issue/" + ticketId + "/worklog"
+
 	reqBody := map[string]interface{}{
 		"comment":          entry.Note,
 		"timeSpentSeconds": entry.Period.Duration,
 	}
-	reqBodyJson, _ := json.Marshal(reqBody)
-
-	req, err := http.NewRequest("POST", jiraUrl, strings.NewReader(string(reqBodyJson)))
-	if err != nil {
-		log.Println("Error creating request:", err)
-		return "", err
-	}
-	req.Header.Set("Authorization", "Bearer "+atlassianIntegration.AccessToken)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error sending request:", err)
-		return "", err
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		log.Println("Error response from Atlassian:", resp.StatusCode)
-		return "", errors.New("failed to add time entry to Jira")
-	}
 
 	var worklogResponse map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&worklogResponse); err != nil {
-		log.Println("Error decoding response:", err)
-		return "", err
+	err = s.makeAtlassianRequest(http.MethodPost, jiraUrl, atlassianIntegration.AccessToken, reqBody, &worklogResponse)
+	if err != nil {
+		log.Printf("Error adding time entry to Jira ticket %s for user %s: %v", ticketId, userId, err)
+		return "", errors.New("failed to add time entry to Jira: " + err.Error())
 	}
 
 	worklogId, ok := worklogResponse["id"].(string)
 	if !ok {
-		log.Println("Worklog ID not found in response")
-		return "", errors.New("worklog ID not found")
+		log.Println("Worklog ID not found in response or not a string type assertion failed")
+		return "", errors.New("worklog ID not found in Jira response")
 	}
 
-	log.Println("Worklog ID found:",
-		worklogId)
+	log.Printf("Worklog ID %s added to Jira ticket %s for user %s", worklogId, ticketId, userId)
 	return worklogId, nil
 }
