@@ -1,9 +1,13 @@
 package settings
 
 import (
-	"TimeTrack-cli/database"
+	"TimeTrack-cli/src/database"
 
 	badger "github.com/dgraph-io/badger/v4"
+)
+
+const (
+	SERVER_URL = "https://timetrack.linusromland.com"
 )
 
 type Option struct {
@@ -42,6 +46,10 @@ func getSettings(db *badger.DB) []SettingCategory {
 					Label: "Server URL",
 					GetValue: func(_ string) (string, string) {
 						value := database.GetData(db, database.SERVER_URL)
+
+						if value == "" {
+							value = SERVER_URL // Default value if not set
+						}
 
 						return value, value
 					},

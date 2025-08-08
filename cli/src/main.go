@@ -1,7 +1,7 @@
 package main
 
 import (
-	"TimeTrack-cli/commands"
+	"TimeTrack-cli/src/commands"
 
 	"fmt"
 	"os"
@@ -26,4 +26,3 @@ func main() {
 		fmt.Println(err)
 	}
 }
-
