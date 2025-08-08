@@ -38,8 +38,7 @@ func createMainList(app *tview.Application, db *badger.DB) *tview.List {
 
 	mainList.SetBorderPadding(1, 1, 2, 2).SetBorder(true).SetTitle(" Settings ").SetTitleAlign(tview.AlignLeft)
 
-	mainList.AddItem("Calendar", "", 0, nil)
-	mainList.AddItem("Cloud Sync", "", 0, nil)
+	mainList.AddItem("Server", "", 0, nil)
 	mainList.AddItem("Exit", "", 'e', func() {
 		app.Stop()
 	})

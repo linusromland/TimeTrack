@@ -5,14 +5,5 @@ import (
 )
 
 var AllCommands = []*cli.Command{
-	AddCommand,
-	SelectCalendarCommand,
-	StartCommand,
-	EndCommand,
-	AbortCommand,
-	ListCommand,
-	InfoCommand,
-	ChangeCommand,
-	UpdateCommand,
 	SettingsCommand,
 }

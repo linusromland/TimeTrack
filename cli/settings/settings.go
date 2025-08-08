@@ -1,9 +1,7 @@
 package settings
 
 import (
-	"TimeTrack-cli/calendar"
 	"TimeTrack-cli/database"
-	"fmt"
 
 	badger "github.com/dgraph-io/badger/v4"
 )
@@ -29,102 +27,26 @@ type SettingCategory struct {
 }
 
 var categorySettings = map[string]string{
-	"Calendar":   "calendar",
-	"Cloud Sync": "cloudSync",
+	"Server": "server",
 }
 
 func getSettings(db *badger.DB) []SettingCategory {
-	calendars := calendar.GetCalendars()
-	availableCalendars := []Option{}
-
-	for _, cal := range calendars.Items {
-		availableCalendars = append(availableCalendars, Option{Value: cal.Id, Label: cal.Summary})
-	}
-
 	settings := []SettingCategory{
 		{
-			Id:    "calendar",
-			Label: "Calendar",
+			Id:    "server",
+			Label: "Server",
 			Settings: []Setting{
-				{
-					Id:      "calendar",
-					Type:    "select",
-					Label:   "Select Calendar",
-					Options: availableCalendars,
-					GetValue: func(value string) (string, string) {
-						if value == "" {
-							value = database.GetData(db, database.CALENDAR_ID)
-						}
-
-						for _, calendar := range availableCalendars {
-							if calendar.Value == value {
-								return calendar.Value, calendar.Label
-							}
-						}
-
-						return "", ""
-					},
-					SetValue: func(value string) {
-						database.SetData(db, database.CALENDAR_ID, value)
-					},
-				},
-			},
-		},
-		{
-			Id:    "cloudSync",
-			Label: "Cloud Sync",
-			Settings: []Setting{
-				{
-					Id:    "enabled",
-					Type:  "checkbox",
-					Label: "Cloud Sync Enabled",
-					GetValue: func(_ string) (string, string) {
-						value := database.GetData(db, database.CLOUD_SYNC_ENABLED)
-
-						label := "Disabled"
-						if value == "true" {
-							label = "Enabled"
-						}
-
-						return value, label
-					},
-					SetValue: func(value string) {
-						database.SetData(db, database.CLOUD_SYNC_ENABLED, value)
-					},
-				},
 				{
 					Id:    "url",
 					Type:  "text",
-					Label: "Cloud Sync URL",
+					Label: "Server URL",
 					GetValue: func(_ string) (string, string) {
-						value := database.GetData(db, database.CLOUD_SYNC_URL)
+						value := database.GetData(db, database.SERVER_URL)
 
 						return value, value
 					},
 					SetValue: func(value string) {
-						database.SetData(db, database.CLOUD_SYNC_URL, value)
-					},
-				},
-				{
-					Id:    "interval",
-					Type:  "number",
-					Label: "Sync Interval",
-					GetValue: func(_ string) (string, string) {
-						value := database.GetData(db, database.CLOUD_SYNC_INTERVAL)
-
-						if value == "" {
-							return "", ""
-						}
-
-						label := "Every time"
-						if value != "0" {
-							label = fmt.Sprintf("Every %s hour(s)", value)
-						}
-
-						return value, label
-					},
-					SetValue: func(value string) {
-						database.SetData(db, database.CLOUD_SYNC_INTERVAL, value)
+						database.SetData(db, database.SERVER_URL, value)
 					},
 				},
 			},
@@ -147,7 +69,6 @@ func getSettingCategory(db *badger.DB, id string) SettingCategory {
 }
 
 func GetSettingsByCategory(db *badger.DB, category string) []Setting {
-	// get the settingsCategory from the map
 	settingsCategoryId := categorySettings[category]
 
 	settingCategory := getSettingCategory(db, settingsCategoryId)
