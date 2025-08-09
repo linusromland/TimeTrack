@@ -1,24 +1,32 @@
 package settings
 
 import (
+	"TimeTrack-cli/src/database"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-func RenderSettingsUI(app *tview.Application, settingsList []Setting, goBack func()) *tview.List {
+func RenderSettingsUI(app *tview.Application, db *database.DBWrapper, goBack func()) *tview.List {
+	settingsList := GetAllSettings(db) // always get fresh values
+
 	list := tview.NewList()
 	list.SetBorder(true)
 	list.SetTitle(" Settings ")
 	list.SetTitleAlign(tview.AlignLeft)
 	list.SetBorderPadding(1, 1, 2, 2)
+	list.SetSecondaryTextColor(tcell.ColorGrey)
 
 	for _, s := range settingsList {
-		list.AddItem(s.Label(), "Current value: "+s.Get(), 0, nil)
+		if s.Type() == "static" {
+			list.AddItem(s.Label(), s.Get(), 0, nil)
+		} else {
+			list.AddItem(s.Label(), "Current value: "+s.Get(), 0, nil)
+		}
 	}
+
 	list.AddItem("Back", "", 'b', goBack)
-	list.SetSecondaryTextColor(tcell.ColorGrey)
 
 	list.SetSelectedFunc(func(index int, mainText, _ string, _ rune) {
 		if mainText == "Back" {
@@ -26,14 +34,19 @@ func RenderSettingsUI(app *tview.Application, settingsList []Setting, goBack fun
 			return
 		}
 		if index < len(settingsList) {
-			editSetting(app, settingsList, index, goBack)
+			if settingsList[index].Type() == "static" {
+				// Re-render with fresh data
+				app.SetRoot(RenderSettingsUI(app, db, goBack), true)
+			} else {
+				editSetting(app, db, settingsList, index, goBack)
+			}
 		}
 	})
 
 	return list
 }
 
-func editSetting(app *tview.Application, settingsList []Setting, index int, goBack func()) {
+func editSetting(app *tview.Application, db *database.DBWrapper, settingsList []Setting, index int, goBack func()) {
 	setting := settingsList[index]
 	form := tview.NewForm()
 	form.SetBorder(true)
@@ -69,11 +82,11 @@ func editSetting(app *tview.Application, settingsList []Setting, index int, goBa
 
 	form.AddButton("Save", func() {
 		setting.Set(currentValue)
-		app.SetRoot(RenderSettingsUI(app, settingsList, goBack), true)
+		app.SetRoot(RenderSettingsUI(app, db, goBack), true)
 	})
 
 	form.AddButton("Cancel", func() {
-		app.SetRoot(RenderSettingsUI(app, settingsList, goBack), true)
+		app.SetRoot(RenderSettingsUI(app, db, goBack), true)
 	})
 
 	app.SetRoot(form, true)

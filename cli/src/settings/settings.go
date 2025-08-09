@@ -3,6 +3,8 @@ package settings
 import (
 	"TimeTrack-cli/src/config"
 	"TimeTrack-cli/src/database"
+	"TimeTrack-cli/src/services"
+	"fmt"
 )
 
 type Setting interface {
@@ -33,6 +35,21 @@ func (s TextSetting) Get() string {
 }
 func (s TextSetting) Set(v string) error { return s.db.Set(s.key, v) }
 
+type StaticSetting struct {
+	id     string
+	label  string
+	getter func() string
+}
+
+func (s StaticSetting) ID() string    { return s.id }
+func (s StaticSetting) Label() string { return s.label }
+func (s StaticSetting) Type() string  { return "static" }
+func (s StaticSetting) Get() string   { return s.getter() }
+func (s StaticSetting) Set(_ string) error {
+	// Static values can't be set
+	return nil
+}
+
 type SettingCategory struct {
 	ID       string
 	Label    string
@@ -40,7 +57,26 @@ type SettingCategory struct {
 }
 
 func GetAllSettings(db *database.DBWrapper) []Setting {
+	api := services.NewAPIService(db)
+
 	return []Setting{
+		StaticSetting{
+			id:    "server_health",
+			label: "Server Health",
+			getter: func() string {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Printf("Recovered in getter: %v\n", r)
+					}
+				}()
+
+				health, err := api.HealthCheck()
+				if err != nil {
+					return fmt.Sprintf("Unhealthy - %s", err.Error())
+				}
+				return fmt.Sprintf("Healthy - Version: %s", health.Version)
+			},
+		},
 		TextSetting{
 			id:    "url",
 			label: "Server URL",

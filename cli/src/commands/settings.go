@@ -14,9 +14,8 @@ func getSettingsCommand(ctx *app.AppContext) *cli.Command {
 		Usage: "Manage application settings",
 		Action: func(c *cli.Context) error {
 			appUI := tview.NewApplication()
-			settingsList := settings.GetAllSettings(ctx.DB)
 
-			mainUI := settings.RenderSettingsUI(appUI, settingsList, func() {
+			mainUI := settings.RenderSettingsUI(appUI, ctx.DB, func() {
 				appUI.Stop()
 			})
 
