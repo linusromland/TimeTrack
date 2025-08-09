@@ -41,6 +41,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService, tokenService)
 	projectHandler := handlers.NewProjectHandler(projectService)
 	timeEntryHandler := handlers.NewTimeEntryHandler(timeEntryService, projectService)
+	healthHandler := handlers.NewHealthHandler(database.Database, cfg.APIVersion)
 
 	// Setup Gin router
 	r := gin.Default()
@@ -48,12 +49,14 @@ func main() {
 	// Serve Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-
 	// Versioned API path `/api/v1`
 	apiV1 := r.Group("/api/v1")
 	{
 		apiV1.POST("/register", userHandler.RegisterUser)
 		apiV1.POST("/login", userHandler.LoginUser)
+
+		// Health check endpoint
+		apiV1.GET("/health", healthHandler.CheckHealth)
 
 		// Authentication routes
 		authGroup := apiV1.Group("/")
