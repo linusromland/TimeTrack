@@ -1,9 +1,13 @@
 package commands
 
 import (
+	"TimeTrack-cli/src/app"
+
 	"github.com/urfave/cli/v2"
 )
 
-var AllCommands = []*cli.Command{
-	SettingsCommand,
+func GetAllCommands(ctx *app.AppContext) []*cli.Command {
+	return []*cli.Command{
+		getSettingsCommand(ctx),
+	}
 }

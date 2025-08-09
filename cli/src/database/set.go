@@ -6,10 +6,9 @@ import (
 	badger "github.com/dgraph-io/badger/v4"
 )
 
-func SetData(db *badger.DB, key, value string) error {
-	err := db.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(key), []byte(value))
-		return err
+func (d *DBWrapper) Set(key, value string) error {
+	err := d.DB.Update(func(txn *badger.Txn) error {
+		return txn.Set([]byte(key), []byte(value))
 	})
 	if err != nil {
 		return fmt.Errorf("could not insert data: %v", err)

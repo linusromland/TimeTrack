@@ -4,18 +4,21 @@ import (
 	badger "github.com/dgraph-io/badger/v4"
 )
 
-func OpenDB() (*badger.DB, error) {
+type DBWrapper struct {
+	DB *badger.DB
+}
+
+func OpenDB() (*DBWrapper, error) {
 	dbPath := "/tmp/badger"
-	opts := badger.DefaultOptions(dbPath).WithInMemory(true)
-	opts.InMemory = false
+	opts := badger.DefaultOptions(dbPath).WithInMemory(false)
 	opts.Logger = nil
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	return &DBWrapper{DB: db}, nil
 }
 
-func CloseDB(db *badger.DB) error {
-	return db.Close()
+func (d *DBWrapper) Close() error {
+	return d.DB.Close()
 }

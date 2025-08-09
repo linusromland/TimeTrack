@@ -6,9 +6,9 @@ import (
 	badger "github.com/dgraph-io/badger/v4"
 )
 
-func GetData(db *badger.DB, key string) string {
+func (d *DBWrapper) Get(key string) string {
 	var valueCopy []byte
-	err := db.View(func(txn *badger.Txn) error {
+	err := d.DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return fmt.Errorf("could not get data: %v", err)

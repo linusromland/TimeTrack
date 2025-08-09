@@ -1,85 +1,52 @@
 package settings
 
 import (
+	"TimeTrack-cli/src/config"
 	"TimeTrack-cli/src/database"
-
-	badger "github.com/dgraph-io/badger/v4"
 )
 
-const (
-	SERVER_URL = "https://timetrack.linusromland.com"
-)
-
-type Option struct {
-	Value string
-	Label string
+type Setting interface {
+	ID() string
+	Label() string
+	Get() string
+	Set(string) error
+	Type() string
 }
 
-type Setting struct {
-	Id       string
-	Type     string
-	Label    string
-	Options  []Option                            // For selects
-	GetValue func(value string) (string, string) // Returns value and label. value is used for selects, for all others, leave blank
-	SetValue func(string)                        // Sets value
+type TextSetting struct {
+	id    string
+	label string
+	db    *database.DBWrapper
+	key   string
+	def   string
 }
+
+func (s TextSetting) ID() string    { return s.id }
+func (s TextSetting) Label() string { return s.label }
+func (s TextSetting) Type() string  { return "text" }
+func (s TextSetting) Get() string {
+	val := s.db.Get(s.key)
+	if val == "" {
+		return s.def
+	}
+	return val
+}
+func (s TextSetting) Set(v string) error { return s.db.Set(s.key, v) }
 
 type SettingCategory struct {
-	Id       string
+	ID       string
 	Label    string
 	Settings []Setting
 }
 
-var categorySettings = map[string]string{
-	"Server": "server",
-}
-
-func getSettings(db *badger.DB) []SettingCategory {
-	settings := []SettingCategory{
-		{
-			Id:    "server",
-			Label: "Server",
-			Settings: []Setting{
-				{
-					Id:    "url",
-					Type:  "text",
-					Label: "Server URL",
-					GetValue: func(_ string) (string, string) {
-						value := database.GetData(db, database.SERVER_URL)
-
-						if value == "" {
-							value = SERVER_URL // Default value if not set
-						}
-
-						return value, value
-					},
-					SetValue: func(value string) {
-						database.SetData(db, database.SERVER_URL, value)
-					},
-				},
-			},
+func GetAllSettings(db *database.DBWrapper) []Setting {
+	return []Setting{
+		TextSetting{
+			id:    "url",
+			label: "Server URL",
+			db:    db,
+			key:   database.ServerURLKey,
+			def:   config.DefaultServerURL,
 		},
 	}
-
-	return settings
-}
-
-func getSettingCategory(db *badger.DB, id string) SettingCategory {
-	settings := getSettings(db)
-
-	for _, settingCategory := range settings {
-		if settingCategory.Id == id {
-			return settingCategory
-		}
-	}
-
-	return SettingCategory{}
-}
-
-func GetSettingsByCategory(db *badger.DB, category string) []Setting {
-	settingsCategoryId := categorySettings[category]
-
-	settingCategory := getSettingCategory(db, settingsCategoryId)
-
-	return settingCategory.Settings
 }

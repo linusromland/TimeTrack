@@ -1,5 +1,5 @@
 package database
 
 var (
-	SERVER_URL 			  = "serverUrl"
+	ServerURLKey = "serverUrl"
 )
