@@ -149,5 +149,5 @@ func (h *TimeEntryHandler) List(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "List failed"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"entries": entries})
+	c.JSON(http.StatusOK, entries)
 }

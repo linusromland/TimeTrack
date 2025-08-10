@@ -94,5 +94,5 @@ func (h *ProjectHandler) List(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "List failed"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"projects": projects})
+	c.JSON(http.StatusOK, projects)
 }

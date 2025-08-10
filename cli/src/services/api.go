@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"TimeTrack-cli/src/database"
+	"TimeTrack-cli/src/dtos"
 	"TimeTrack-cli/src/models"
 )
 
@@ -138,18 +140,12 @@ func (api *APIService) Login(email, password string) error {
 }
 
 func (api *APIService) GetCurrentUser() (*models.User, error) {
-	url := fmt.Sprintf("%s/user", api.baseURL)
+	reqURL := fmt.Sprintf("%s/user", api.baseURL)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := api.newAuthRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
-	token := api.db.Get(database.AuthTokenKey)
-	if token == "" {
-		return nil, errors.New("no authentication token found")
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := api.client.Do(req)
 	if err != nil {
@@ -167,4 +163,118 @@ func (api *APIService) GetCurrentUser() (*models.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (api *APIService) GetProjectByName(name string) (*models.Project, error) {
+	reqURL := fmt.Sprintf("%s/projects?name=%s", api.baseURL, url.QueryEscape(name))
+
+	req, err := api.newAuthRequest("GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project by name: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get project by name: %s", resp.Status)
+	}
+
+	var projects []models.Project
+	if err := json.NewDecoder(resp.Body).Decode(&projects); err != nil {
+		return nil, fmt.Errorf("failed to parse projects response: %w", err)
+	}
+	if len(projects) == 0 {
+		return nil, fmt.Errorf("no project found with name: %s", name)
+	}
+	return &projects[0], nil
+}
+
+func (api *APIService) CreateProject(project *dtos.CreateProjectInput) (*models.Project, error) {
+	reqURL := fmt.Sprintf("%s/projects", api.baseURL)
+
+	body, err := json.Marshal(project)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal project: %w", err)
+	}
+
+	req, err := api.newAuthRequest("POST", reqURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create project: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("failed to create project: %s", resp.Status)
+	}
+
+	var createdProject models.Project
+	if err := json.NewDecoder(resp.Body).Decode(&createdProject); err != nil {
+		return nil, fmt.Errorf("failed to parse created project response: %w", err)
+	}
+
+	return &createdProject, nil
+}
+
+func (api *APIService) CreateTimeEntry(entry *dtos.CreateTimeEntryInput) (*models.TimeEntry, error) {
+	reqURL := fmt.Sprintf("%s/time-entries", api.baseURL)
+
+	body, err := json.Marshal(entry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal time entry: %w", err)
+	}
+
+	req, err := api.newAuthRequest("POST", reqURL, body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create time entry: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("failed to create time entry: %s", resp.Status)
+	}
+
+	var createdEntry models.TimeEntry
+	if err := json.NewDecoder(resp.Body).Decode(&createdEntry); err != nil {
+		return nil, fmt.Errorf("failed to parse created time entry response: %w", err)
+	}
+
+	return &createdEntry, nil
+}
+
+func (api *APIService) newAuthRequest(method, url string, body []byte) (*http.Request, error) {
+	token := api.db.Get(database.AuthTokenKey)
+	if token == "" {
+		return nil, errors.New("no authentication token found")
+	}
+
+	var bodyReader io.Reader
+	if body != nil {
+		bodyReader = bytes.NewReader(body)
+	}
+
+	req, err := http.NewRequest(method, url, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	return req, nil
 }
