@@ -4,6 +4,10 @@ go 1.23.0
 
 toolchain go1.24.2
 
+require TimeTrack-shared v0.0.0
+
+replace TimeTrack-shared => ../../shared
+
 require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/gdamore/tcell/v2 v2.8.1

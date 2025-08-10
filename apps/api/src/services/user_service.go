@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
-	"TimeTrack-api/src/models"
+	"TimeTrack-shared/models"
 )
 
 var userProjection = bson.M{

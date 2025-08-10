@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"TimeTrack-cli/src/database"
-	"TimeTrack-cli/src/models"
+	"TimeTrack-shared/models"
 )
 
 type AuthPayload struct {

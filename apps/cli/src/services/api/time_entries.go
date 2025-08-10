@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"TimeTrack-cli/src/dtos"
-	"TimeTrack-cli/src/models"
+	"TimeTrack-shared/dtos"
+	"TimeTrack-shared/models"
 )
 
 func (api *APIService) CreateTimeEntry(entry *dtos.CreateTimeEntryInput) (*models.TimeEntry, error) {

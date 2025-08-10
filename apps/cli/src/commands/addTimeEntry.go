@@ -2,9 +2,9 @@ package commands
 
 import (
 	"TimeTrack-cli/src/app"
-	"TimeTrack-cli/src/dtos"
-	"TimeTrack-cli/src/models"
 	"TimeTrack-cli/src/utils"
+	"TimeTrack-shared/dtos"
+	"TimeTrack-shared/models"
 
 	"fmt"
 	"time"

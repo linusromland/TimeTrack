@@ -1,7 +1,7 @@
 package services
 
 import (
-	"TimeTrack-api/src/models"
+	"TimeTrack-shared/models"
 	"context"
 	"time"
 

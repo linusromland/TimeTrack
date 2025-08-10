@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"TimeTrack-api/src/dtos"
-	"TimeTrack-api/src/models"
 	"TimeTrack-api/src/services"
+	"TimeTrack-shared/dtos"
+	"TimeTrack-shared/models"
 	"net/http"
 	"strconv"
 	"time"

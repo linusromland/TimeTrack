@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"TimeTrack-cli/src/dtos"
-	"TimeTrack-cli/src/models"
+	"TimeTrack-shared/dtos"
+	"TimeTrack-shared/models"
 )
 
 func (api *APIService) GetProjectByName(name string) (*models.Project, error) {

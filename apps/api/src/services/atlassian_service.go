@@ -2,7 +2,7 @@ package services
 
 import (
 	"TimeTrack-api/src/config"
-	"TimeTrack-api/src/models"
+	"TimeTrack-shared/models"
 	"bytes"
 	"encoding/json"
 	"errors"
