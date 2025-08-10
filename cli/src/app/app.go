@@ -3,7 +3,7 @@ package app
 import (
 	"TimeTrack-cli/src/config"
 	"TimeTrack-cli/src/database"
-	services "TimeTrack-cli/src/services/api"
+	"TimeTrack-cli/src/services"
 	"fmt"
 
 	"github.com/urfave/cli/v2"

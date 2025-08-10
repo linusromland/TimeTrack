@@ -3,7 +3,7 @@ package settings
 import (
 	"TimeTrack-cli/src/config"
 	"TimeTrack-cli/src/database"
-	services "TimeTrack-cli/src/services/api"
+	"TimeTrack-cli/src/services"
 	"fmt"
 )
 
