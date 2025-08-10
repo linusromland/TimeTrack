@@ -1,6 +1,7 @@
 package app
 
 import (
+	"TimeTrack-cli/src/config"
 	"TimeTrack-cli/src/database"
 	"TimeTrack-cli/src/services"
 	"fmt"
@@ -26,6 +27,12 @@ func (a *AppContext) Startup(c *cli.Context) error {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 	a.DB = db
+
+	// Initialize the database with default values
+	if err := config.InitializeDB(a.DB); err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+	
 
 	a.API = services.NewAPIService(a.DB)
 

@@ -8,6 +8,8 @@ import (
 
 func GetAllCommands(ctx *app.AppContext) []*cli.Command {
 	return []*cli.Command{
+		getLoginCommand(ctx),
+		getRegisterCommand(ctx),
 		getSettingsCommand(ctx),
 	}
 }

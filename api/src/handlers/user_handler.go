@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -53,6 +54,9 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		return
 	}
 
+	// log email and password for debugging purposes
+	fmt.Printf("Login attempt with email: %s, password: %s\n", loginData.Email, loginData.Password)
+
 	user, err := h.userService.LoginUser(c, &loginData)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -74,5 +78,5 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching user"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	c.JSON(http.StatusOK, user)
 }

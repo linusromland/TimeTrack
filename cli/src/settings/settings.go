@@ -77,6 +77,23 @@ func GetAllSettings(db *database.DBWrapper) []Setting {
 				return fmt.Sprintf("Healthy - Version: %s", health.Version)
 			},
 		},
+		StaticSetting{
+			id:    "user",
+			label: "User",
+			getter: func() string {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Printf("Recovered in getter: %v\n", r)
+					}
+				}()
+
+				user, err := api.GetCurrentUser()
+				if err != nil {
+					return "Unauthorized / Not logged in"
+				}
+				return fmt.Sprintf("Logged in as: %s", user.Email)
+			},
+		},
 		TextSetting{
 			id:    "url",
 			label: "Server URL",

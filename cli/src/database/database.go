@@ -22,3 +22,4 @@ func OpenDB() (*DBWrapper, error) {
 func (d *DBWrapper) Close() error {
 	return d.DB.Close()
 }
+
