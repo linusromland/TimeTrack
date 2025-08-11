@@ -28,3 +28,21 @@ type TimeEntry struct {
 	UpdatedAt time.Time     `bson:"updated_at" json:"updated_at"`
 	DeletedAt *time.Time    `bson:"deleted_at,omitempty" json:"-"`
 }
+
+type TimeEntryStatPerDate struct {
+	TimeFrame string `bson:"timeframe" json:"timeframe"`  // ISO 8601 format for the correct time format. (e.g. for day 2025-08-11, month 2025-08, week 2025-W32)
+	TotalTime float64 `bson:"total_time" json:"total_time"` // total time in seconds
+}
+
+type TimeEntryPerProject struct {
+	ProjectID string  `bson:"project_id" json:"project_id"`
+	TotalTime float64 `bson:"total_time" json:"total_time"` // total time in seconds
+}
+
+type TimeEntryStatistics struct {
+	TotalEntries      int64                  `json:"total_entries"`       // total number of time entries used for statistics
+	TotalTime         int64                  `json:"total_time"`          // total time in seconds
+	Format            string                 `json:"format"`              // e.g. "d" for days, "w" for weeks, "m" for months
+	EntriesPerDate    []TimeEntryStatPerDate `json:"entries_per_date"`    // list of time entries per date in the specified format
+	EntriesPerProject []TimeEntryPerProject  `json:"entries_per_project"` // list of time entries per project
+}

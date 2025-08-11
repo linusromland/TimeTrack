@@ -3,13 +3,13 @@ package services
 import (
 	"TimeTrack-shared/models"
 	"context"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type TimeEntryService struct {
@@ -83,8 +83,14 @@ func (s *TimeEntryService) GetTimeEntries(ctx context.Context, ownerID string, f
 		filter["period.started"] = dateRange
 	}
 
-	opts := options.Find().SetSkip(skip).SetLimit(limit)
-	cursor, err := s.timeEntryCollection.Find(ctx, filter, opts)
+	pipeline := bson.A{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$skip", Value: skip}},
+		bson.D{{Key: "$limit", Value: limit}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: "period.started", Value: -1}}}},
+	}
+
+	cursor, err := s.timeEntryCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
@@ -94,4 +100,133 @@ func (s *TimeEntryService) GetTimeEntries(ctx context.Context, ownerID string, f
 		return nil, err
 	}
 	return entries, nil
+}
+
+func (s *TimeEntryService) GetTimeEntryStatistics(
+	ctx context.Context,
+	ownerID string,
+	from, to *time.Time,
+	format string,
+) (*models.TimeEntryStatistics, error) {
+	if format != "d" && format != "w" && format != "m" {
+		return nil, fmt.Errorf("invalid format: %s, must be one of 'd', 'w', or 'm'", format)
+	}
+
+	filter := bson.M{"owner_id": ownerID, "deleted_at": bson.M{"$eq": nil}}
+	if from != nil || to != nil {
+		dateRange := bson.M{}
+		if from != nil {
+			dateRange["$gte"] = *from
+		}
+		if to != nil {
+			dateRange["$lte"] = *to
+		}
+		filter["period.started"] = dateRange
+	}
+
+	// Time format projection
+	var dateFormat string
+	switch format {
+	case "d":
+		dateFormat = "%Y-%m-%d" // day
+	case "w":
+		dateFormat = "%G-W%V" // ISO week format (year-week)
+	case "m":
+		dateFormat = "%Y-%m" // month
+	}
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{
+			{Key: "$facet", Value: bson.M{
+				"perDate": bson.A{
+					bson.D{{Key: `$group`, Value: bson.M{
+						"_id": bson.M{
+							"timeframe": bson.M{
+								"$dateToString": bson.M{
+									"format":   dateFormat,
+									"date":     "$period.started",
+									"timezone": "UTC",
+								},
+							},
+						},
+						"total_time": bson.M{"$sum": "$period.duration"},
+					}}},
+					bson.D{{Key: "$sort", Value: bson.M{"_id.timeframe": 1}}},
+					bson.D{{Key: "$project", Value: bson.M{
+						"timeframe":  "$_id.timeframe",
+						"total_time": 1,
+						"_id":        0,
+					}}},
+				},
+				"perProject": bson.A{
+					bson.D{{Key: "$group", Value: bson.M{
+						"_id":        "$project_id",
+						"total_time": bson.M{"$sum": "$period.duration"},
+					}}},
+					bson.D{{Key: "$sort", Value: bson.M{"total_time": -1}}},
+					bson.D{{Key: "$project", Value: bson.M{
+						"project_id": "$_id",
+						"total_time": 1,
+						"_id":        0,
+					}}},
+				},
+				"totalTime": bson.A{
+					bson.D{{Key: "$group", Value: bson.M{
+						"_id":        nil,
+						"total_time": bson.M{"$sum": "$period.duration"},
+					}}},
+					bson.D{{Key: "$project", Value: bson.M{"_id": 0}}},
+				},
+				"matchCount": bson.A{
+					bson.D{{Key: "$count", Value: "count"}},
+				},
+			}},
+		},
+	}
+
+	cursor, err := s.timeEntryCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []struct {
+		PerDate     []models.TimeEntryStatPerDate `bson:"perDate"`
+		PerProject  []models.TimeEntryPerProject  `bson:"perProject"`
+		TotalTimeAr []struct {
+			TotalTime int64 `bson:"total_time"`
+		} `bson:"totalTime"`
+		MatchCountAr []struct {
+			Count int64 `bson:"count"`
+		} `bson:"matchCount"`
+	}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	if len(results) == 0 {
+		return &models.TimeEntryStatistics{
+			TotalEntries:      0,
+			TotalTime:         0,
+			Format:            format,
+			EntriesPerDate:    []models.TimeEntryStatPerDate{},
+			EntriesPerProject: []models.TimeEntryPerProject{},
+		}, nil
+	}
+
+	stats := &models.TimeEntryStatistics{
+		Format:            format,
+		EntriesPerDate:    results[0].PerDate,
+		EntriesPerProject: results[0].PerProject,
+	}
+
+	if len(results[0].TotalTimeAr) > 0 {
+		stats.TotalTime = results[0].TotalTimeAr[0].TotalTime
+	}
+
+	if len(results[0].MatchCountAr) > 0 {
+		stats.TotalEntries = results[0].MatchCountAr[0].Count
+	}
+
+	return stats, nil
 }

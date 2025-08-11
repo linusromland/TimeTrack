@@ -87,6 +87,7 @@ func main() {
 			authGroup.PUT("/time-entries/:id", timeEntryHandler.Update)
 			authGroup.DELETE("/time-entries/:id", timeEntryHandler.Delete)
 			authGroup.GET("/time-entries", timeEntryHandler.List)
+			authGroup.GET("/time-entries/statistics", timeEntryHandler.Statistics)
 		}
 	}
 

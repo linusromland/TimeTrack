@@ -151,3 +151,30 @@ func (h *TimeEntryHandler) List(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, entries)
 }
+
+func (h *TimeEntryHandler) Statistics(c *gin.Context) {
+	ownerID := c.GetString("user_id")
+	fromStr, toStr := c.Query("from"), c.Query("to")
+	format := c.DefaultQuery("format", "d")
+
+	var from, to *time.Time
+	if fromStr != "" {
+		t, err := time.Parse(time.RFC3339, fromStr)
+		if err == nil {
+			from = &t
+		}
+	}
+	if toStr != "" {
+		t, err := time.Parse(time.RFC3339, toStr)
+		if err == nil {
+			to = &t
+		}
+	}
+
+	stats, err := h.service.GetTimeEntryStatistics(c, ownerID, from, to, format)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Statistics failed"})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
+}
