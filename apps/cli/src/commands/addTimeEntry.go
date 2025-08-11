@@ -19,17 +19,14 @@ func getAddTimeEntryCommand(ctx *app.AppContext) *cli.Command {
 		Usage:   "Add a new time entry",
 		Flags:   addTimeEntryFlags(),
 		Action: func(c *cli.Context) error {
-			// Ensure user is authenticated
 			if _, err := ctx.API.GetCurrentUser(); err != nil {
 				return cli.Exit("Unauthorized or not logged in. Please login or register first.", 1)
 			}
 
-			// Validate input formats
 			if err := validateTimeEntryInputs(c); err != nil {
 				return err
 			}
 
-			// Determine start/end times
 			endDate := c.String("endDate")
 			if endDate == "" {
 				endDate = c.String("date")
@@ -38,20 +35,17 @@ func getAddTimeEntryCommand(ctx *app.AppContext) *cli.Command {
 			startTimeStr := fmt.Sprintf("%sT%s:00+02:00", c.String("date"), c.String("start"))
 			endTimeStr := fmt.Sprintf("%sT%s:00+02:00", endDate, c.String("end"))
 
-			// Retrieve or create project
 			project, err := getOrCreateProject(ctx, c.String("name"))
 			if err != nil {
 				return err
 			}
 
-			// Parse start/end times and validate order
 			startTimeParsed, _ := time.Parse(time.RFC3339, startTimeStr)
 			endTimeParsed, _ := time.Parse(time.RFC3339, endTimeStr)
 			if endTimeParsed.Before(startTimeParsed) {
 				return cli.Exit("End time is before start time.", 1)
 			}
 
-			// Create time entry object
 			entry := &dtos.CreateTimeEntryInput{
 				ProjectID: project.ID,
 				Note:      c.String("description"),
@@ -61,7 +55,6 @@ func getAddTimeEntryCommand(ctx *app.AppContext) *cli.Command {
 				},
 			}
 
-			// Confirm and create
 			if c.Bool("skipConfirmation") || utils.Confirm(
 				"This will create a new time entry with the following details:\n\n"+
 					getTimeEntryInformationString(project, entry)+

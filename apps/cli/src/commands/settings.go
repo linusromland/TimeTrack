@@ -2,7 +2,7 @@ package commands
 
 import (
 	"TimeTrack-cli/src/app"
-	"TimeTrack-cli/src/settings"
+	"TimeTrack-cli/src/ui"
 
 	"github.com/rivo/tview"
 	"github.com/urfave/cli/v2"
@@ -15,7 +15,7 @@ func getSettingsCommand(ctx *app.AppContext) *cli.Command {
 		Action: func(c *cli.Context) error {
 			appUI := tview.NewApplication()
 
-			mainUI := settings.RenderSettingsUI(appUI, ctx.DB, func() {
+			mainUI := ui.RenderSettingsUI(appUI, ctx.DB, func() {
 				appUI.Stop()
 			})
 

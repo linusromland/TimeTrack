@@ -21,6 +21,7 @@ var userProjection = bson.M{
 	"lastName":   1,
 	"createdAt":  1,
 	"updatedAt":  1,
+	"integration.atlassian.enabled": 1,
 }
 
 type UserService struct {
