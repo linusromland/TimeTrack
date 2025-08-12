@@ -8,9 +8,10 @@ import (
 
 func GetAllCommands(ctx *app.AppContext) []*cli.Command {
 	return []*cli.Command{
+		getAddTimeEntryCommand(ctx),
+		getListTimeEntriesCommand(ctx),
 		getLoginCommand(ctx),
 		getRegisterCommand(ctx),
-		getAddTimeEntryCommand(ctx),
 		getSettingsCommand(ctx),
 	}
 }

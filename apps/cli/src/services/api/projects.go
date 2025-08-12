@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"TimeTrack-shared/dtos"
 	"TimeTrack-shared/models"
@@ -36,6 +37,31 @@ func (api *APIService) GetProjectByName(name string) (*models.Project, error) {
 		return nil, fmt.Errorf("no project found with name: %s", name)
 	}
 	return &projects[0], nil
+}
+
+func (api *APIService) GetProjectByIds(ids []string) ([]models.Project, error) {
+	reqURL := fmt.Sprintf("%s/projects?ids=%s", api.baseURL, url.QueryEscape(strings.Join(ids, ",")))
+
+	req, err := api.newAuthRequest("GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get projects by IDs: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get projects by IDs: %s", resp.Status)
+	}
+
+	var projects []models.Project
+	if err := json.NewDecoder(resp.Body).Decode(&projects); err != nil {
+		return nil, fmt.Errorf("failed to parse projects response: %w", err)
+	}
+	return projects, nil
 }
 
 func (api *APIService) CreateProject(project *dtos.CreateProjectInput) (*models.Project, error) {
