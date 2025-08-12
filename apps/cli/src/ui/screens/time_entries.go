@@ -24,8 +24,8 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 	table := tview.NewTable().
 		SetSelectable(true, false)
-	table.SetBorder(true)
-	table.SetTitle(" Time Entries ")
+	table.SetBorder(true).
+		SetTitle(" Time Entries ")
 
 	actionBar := tview.NewTextView().
 		SetDynamicColors(true).
@@ -48,25 +48,51 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 	refreshTableHighlight := func() {
 		rowCount := table.GetRowCount()
+		selectedRow, _ := table.GetSelection()
+
 		for r := 1; r < rowCount; r++ {
-			cell := table.GetCell(r, 0)
-			text := strings.TrimPrefix(strings.TrimPrefix(cell.Text, "[green]"), "[white]")
-			if selectedRows[r] {
-				cell.SetText("[green]" + text)
-			} else {
-				cell.SetText("[white]" + text)
+			for c := 0; c < table.GetColumnCount(); c++ {
+				cell := table.GetCell(r, c)
+				if cell == nil {
+					continue
+				}
+				// Strip color tags from text
+				text := strings.TrimPrefix(strings.TrimPrefix(cell.Text, "[green]"), "[white]")
+
+				if r == selectedRow {
+					// Highlight current row (yellow)
+					cell.SetText(text).
+						SetTextColor(tcell.ColorBlack).
+						SetBackgroundColor(tcell.ColorYellow)
+				} else if selectedRows[r] {
+					// Selected row in selection mode (green)
+					cell.SetText(text).
+						SetTextColor(tcell.ColorWhite).
+						SetBackgroundColor(tcell.ColorDarkGreen)
+				} else {
+					// Normal row
+					cell.SetText("[white]" + text).
+						SetTextColor(tcell.ColorWhite).
+						SetBackgroundColor(tcell.ColorDefault)
+				}
 			}
 		}
 	}
 
-	updateActionBar := func() {
-		status := ""
+	updateTableTitle := func() {
 		if selectionMode {
-			status = " [Selection Mode: ON]"
+			table.SetTitle("[red] Time Entries (Selection Mode ON) ").
+				SetBorderColor(tcell.ColorRed)
+		} else {
+			table.SetTitle(" Time Entries ").
+				SetBorderColor(tcell.ColorWhite)
 		}
-		actionBar.SetText(fmt.Sprintf("[yellow](D)[white] Delete   [yellow](R)[white] Report   [yellow](A)[white] Amend   "+
-			"[yellow](S)[white] Toggle Selection Mode   [yellow](Space)[white] Select Row   "+
-			"[yellow](N)[white] Next Page   [yellow](P)[white] Prev Page   [yellow](Q)[white] Quit%s", status))
+	}
+
+	updateActionBar := func() {
+		actionBar.SetText("[yellow](D)[white] Delete   [yellow](R)[white] Report   [yellow](A)[white] Amend   " +
+			"[yellow](S)[white] Toggle Selection Mode   [yellow](Space)[white] Select Row   " +
+			"[yellow](N)[white] Next Page   [yellow](P)[white] Prev Page   [yellow](Q)[white] Quit")
 	}
 
 	loadData := func(page int) {
@@ -74,6 +100,7 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 		table.Clear()
 		selectedRows = map[int]bool{}
 		updateActionBar()
+		updateTableTitle()
 
 		stats, err := ctx.API.GetTimeEntryStatistics(startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
 		if err != nil {
@@ -168,6 +195,7 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 				table.SetCell(row+1, col, tview.NewTableCell("[white]"+val))
 			}
 		}
+		refreshTableHighlight()
 	}
 
 	confirmAction := func(title, message string, onConfirm func()) {
@@ -183,6 +211,10 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 		modal.SetTitle(title).SetBorder(true)
 		nav.Show(modal)
 	}
+
+	table.SetSelectionChangedFunc(func(row, column int) {
+		refreshTableHighlight()
+	})
 
 	updateActionBar()
 
@@ -201,7 +233,9 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 		case "s":
 			selectionMode = !selectionMode
+			updateTableTitle()
 			updateActionBar()
+			refreshTableHighlight()
 		case " ":
 			if selectionMode && row > 0 {
 				selectedRows[row] = !selectedRows[row]
@@ -239,10 +273,15 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 		case "a":
 			if selectionMode && len(selectedRows) > 0 {
-				confirmAction("Bulk Amend",
-					fmt.Sprintf("[red]WARNING: Amending multiple entries!\n\nAmend %d selected entries?",
-						len(selectedRows)),
-					func() { /* TODO: bulk amend */ })
+				// Show warning for bulk amend
+				warningModal := tview.NewModal().
+					SetText("[red]Bulk amend is not allowed.\n\nPlease amend entries individually.").
+					AddButtons([]string{"OK"}).
+					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+						nav.Show(TimeEntriesScreen(nav, ctx, startDate, endDate))
+					})
+				warningModal.SetTitle("Bulk Amend Blocked").SetBorder(true)
+				nav.Show(warningModal)
 			} else if !selectionMode && row > 0 {
 				entry := entriesCache[row-1]
 				project := projectMap[entry.ProjectID]
