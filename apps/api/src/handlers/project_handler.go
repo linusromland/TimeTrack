@@ -6,6 +6,7 @@ import (
 	"TimeTrack-shared/models"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -89,7 +90,17 @@ func (h *ProjectHandler) List(c *gin.Context) {
 	skip, _ := strconv.ParseInt(c.DefaultQuery("skip", "0"), 10, 64)
 	limit, _ := strconv.ParseInt(c.DefaultQuery("limit", "20"), 10, 64)
 
-	projects, err := h.service.GetProjects(c, ownerID, name, skip, limit)
+	// check if "ids" query parameter is provided, and if so parse it it is comma separated
+	idsParam := c.Query("ids")
+	var ids []string
+	if idsParam != "" {
+		ids = strings.Split(idsParam, ",")
+		for i := range ids {
+			ids[i] = strings.TrimSpace(ids[i])
+		}
+	}
+
+	projects, err := h.service.GetProjects(c, ownerID, name, ids, skip, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "List failed"})
 		return

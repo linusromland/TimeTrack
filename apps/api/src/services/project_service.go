@@ -58,10 +58,14 @@ func (s *ProjectService) DeleteProject(ctx context.Context, id string) error {
 	return err
 }
 
-func (s *ProjectService) GetProjects(ctx context.Context, ownerID string, nameFilter string, skip, limit int64) ([]models.Project, error) {
+func (s *ProjectService) GetProjects(ctx context.Context, ownerID string, nameFilter string, ids []string, skip, limit int64) ([]models.Project, error) {
 	filter := bson.M{"owner_id": ownerID, "deleted_at": bson.M{"$eq": nil}}
 	if nameFilter != "" {
 		filter["name"] = bson.M{"$regex": nameFilter, "$options": "i"}
+	}
+
+	if ids != nil {
+		filter["_id"] = bson.M{"$in": ids}
 	}
 
 	opts := options.Find().SetSkip(skip).SetLimit(limit)
