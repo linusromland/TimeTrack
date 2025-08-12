@@ -56,21 +56,17 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 				if cell == nil {
 					continue
 				}
-				// Strip color tags from text
 				text := strings.TrimPrefix(strings.TrimPrefix(cell.Text, "[green]"), "[white]")
 
 				if r == selectedRow {
-					// Highlight current row (yellow)
 					cell.SetText(text).
 						SetTextColor(tcell.ColorBlack).
 						SetBackgroundColor(tcell.ColorYellow)
 				} else if selectedRows[r] {
-					// Selected row in selection mode (green)
 					cell.SetText(text).
 						SetTextColor(tcell.ColorWhite).
 						SetBackgroundColor(tcell.ColorDarkGreen)
 				} else {
-					// Normal row
 					cell.SetText("[white]" + text).
 						SetTextColor(tcell.ColorWhite).
 						SetBackgroundColor(tcell.ColorDefault)
@@ -93,6 +89,48 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 		actionBar.SetText("[yellow](D)[white] Delete   [yellow](R)[white] Report   [yellow](A)[white] Amend   " +
 			"[yellow](S)[white] Toggle Selection Mode   [yellow](Space)[white] Select Row   " +
 			"[yellow](N)[white] Next Page   [yellow](P)[white] Prev Page   [yellow](Q)[white] Quit")
+	}
+
+	// Show confirmation with a list of entries
+	showEntryListConfirm := func(title, action string, rows map[int]bool, singleRow int, onConfirm func()) {
+		listText := ""
+		if rows != nil && len(rows) > 0 {
+			for r := range rows {
+				if r-1 >= 0 && r-1 < len(entriesCache) {
+					entry := entriesCache[r-1]
+					project := projectMap[entry.ProjectID]
+					if project == "" {
+						project = entry.ProjectID
+					}
+					listText += fmt.Sprintf("• %s (%s - %s)\n",
+						project,
+						entry.Period.Started.Format("2006-01-02 15:04"),
+						entry.Period.Ended.Format("15:04"))
+				}
+			}
+		} else if singleRow > 0 && singleRow-1 < len(entriesCache) {
+			entry := entriesCache[singleRow-1]
+			project := projectMap[entry.ProjectID]
+			if project == "" {
+				project = entry.ProjectID
+			}
+			listText += fmt.Sprintf("• %s (%s - %s)\n",
+				project,
+				entry.Period.Started.Format("2006-01-02 15:04"),
+				entry.Period.Ended.Format("15:04"))
+		}
+
+		modal := tview.NewModal().
+			SetText(fmt.Sprintf("%s the following entrie(s)?\n\n%s", action, listText)).
+			AddButtons([]string{"Confirm", "Cancel"}).
+			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				if buttonLabel == "Confirm" {
+					onConfirm()
+				}
+				nav.Show(TimeEntriesScreen(nav, ctx, startDate, endDate))
+			})
+		modal.SetTitle(title).SetBorder(true)
+		nav.Show(modal)
 	}
 
 	loadData := func(page int) {
@@ -198,20 +236,6 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 		refreshTableHighlight()
 	}
 
-	confirmAction := func(title, message string, onConfirm func()) {
-		modal := tview.NewModal().
-			SetText(message).
-			AddButtons([]string{"Confirm", "Cancel"}).
-			SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-				if buttonLabel == "Confirm" {
-					onConfirm()
-				}
-				nav.Show(TimeEntriesScreen(nav, ctx, startDate, endDate))
-			})
-		modal.SetTitle(title).SetBorder(true)
-		nav.Show(modal)
-	}
-
 	table.SetSelectionChangedFunc(func(row, column int) {
 		refreshTableHighlight()
 	})
@@ -243,37 +267,18 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 		case "d":
 			if selectionMode && len(selectedRows) > 0 {
-				confirmAction("Bulk Delete",
-					fmt.Sprintf("Delete %d selected entries?", len(selectedRows)),
-					func() { /* TODO: bulk delete */ })
+				showEntryListConfirm("Bulk Delete", "Delete", selectedRows, -1, func() { /* TODO: bulk delete */ })
 			} else if !selectionMode && row > 0 {
-				entry := entriesCache[row-1]
-				project := projectMap[entry.ProjectID]
-				confirmAction("Delete Entry",
-					fmt.Sprintf("Delete entry: %s (%s - %s)?",
-						project,
-						entry.Period.Started.Format("2006-01-02 15:04"),
-						entry.Period.Ended.Format("15:04")),
-					func() { /* TODO: delete */ })
+				showEntryListConfirm("Delete Entry", "Delete", nil, row, func() { /* TODO: delete */ })
 			}
 		case "r":
 			if selectionMode && len(selectedRows) > 0 {
-				confirmAction("Bulk Report",
-					fmt.Sprintf("Report %d selected entries?", len(selectedRows)),
-					func() { /* TODO: bulk report */ })
+				showEntryListConfirm("Bulk Report", "Report", selectedRows, -1, func() { /* TODO: bulk report */ })
 			} else if !selectionMode && row > 0 {
-				entry := entriesCache[row-1]
-				project := projectMap[entry.ProjectID]
-				confirmAction("Report Entry",
-					fmt.Sprintf("Report entry: %s (%s - %s)?",
-						project,
-						entry.Period.Started.Format("2006-01-02 15:04"),
-						entry.Period.Ended.Format("15:04")),
-					func() { /* TODO: report */ })
+				showEntryListConfirm("Report Entry", "Report", nil, row, func() { /* TODO: report */ })
 			}
 		case "a":
 			if selectionMode && len(selectedRows) > 0 {
-				// Show warning for bulk amend
 				warningModal := tview.NewModal().
 					SetText("[red]Bulk amend is not allowed.\n\nPlease amend entries individually.").
 					AddButtons([]string{"OK"}).
@@ -282,15 +287,8 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 					})
 				warningModal.SetTitle("Bulk Amend Blocked").SetBorder(true)
 				nav.Show(warningModal)
-			} else if !selectionMode && row > 0 {
-				entry := entriesCache[row-1]
-				project := projectMap[entry.ProjectID]
-				confirmAction("Amend Entry",
-					fmt.Sprintf("Amend entry: %s (%s - %s)?",
-						project,
-						entry.Period.Started.Format("2006-01-02 15:04"),
-						entry.Period.Ended.Format("15:04")),
-					func() { /* TODO: amend */ })
+			} else {
+				// Single amend does nothing
 			}
 		case "q":
 			nav.Stop()
