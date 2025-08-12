@@ -69,7 +69,6 @@ func (api *APIService) GetTimeEntries(startDate, endDate string, page int) ([]*m
 	return entries, nil
 }
 
-
 func (api *APIService) GetTimeEntryStatistics(startDate, endDate string) (*models.TimeEntryStatistics, error) {
 	reqURL := fmt.Sprintf("%s/time-entries/statistics?from=%s&to=%s", api.baseURL, startDate, endDate)
 
@@ -95,4 +94,24 @@ func (api *APIService) GetTimeEntryStatistics(startDate, endDate string) (*model
 
 	return stats, nil
 }
-	
+
+func (api *APIService) DeleteTimeEntry(timeEntryId string) error {
+	reqURL := fmt.Sprintf("%s/time-entries/%s", api.baseURL, timeEntryId)
+
+	req, err := api.newAuthRequest("DELETE", reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to delete time entry: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete time entry: %s", resp.Status)
+	}
+
+	return nil
+}

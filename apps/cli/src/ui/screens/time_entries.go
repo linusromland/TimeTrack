@@ -49,7 +49,6 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 	refreshTableHighlight := func() {
 		rowCount := table.GetRowCount()
 		selectedRow, _ := table.GetSelection()
-
 		for r := 1; r < rowCount; r++ {
 			for c := 0; c < table.GetColumnCount(); c++ {
 				cell := table.GetCell(r, c)
@@ -57,19 +56,12 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 					continue
 				}
 				text := strings.TrimPrefix(strings.TrimPrefix(cell.Text, "[green]"), "[white]")
-
 				if r == selectedRow {
-					cell.SetText(text).
-						SetTextColor(tcell.ColorBlack).
-						SetBackgroundColor(tcell.ColorYellow)
+					cell.SetText(text).SetTextColor(tcell.ColorBlack).SetBackgroundColor(tcell.ColorYellow)
 				} else if selectedRows[r] {
-					cell.SetText(text).
-						SetTextColor(tcell.ColorWhite).
-						SetBackgroundColor(tcell.ColorDarkGreen)
+					cell.SetText(text).SetTextColor(tcell.ColorWhite).SetBackgroundColor(tcell.ColorDarkGreen)
 				} else {
-					cell.SetText("[white]" + text).
-						SetTextColor(tcell.ColorWhite).
-						SetBackgroundColor(tcell.ColorDefault)
+					cell.SetText("[white]" + text).SetTextColor(tcell.ColorWhite).SetBackgroundColor(tcell.ColorDefault)
 				}
 			}
 		}
@@ -77,11 +69,9 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 	updateTableTitle := func() {
 		if selectionMode {
-			table.SetTitle("[red] Time Entries (Selection Mode ON) ").
-				SetBorderColor(tcell.ColorRed)
+			table.SetTitle("[red] Time Entries (Selection Mode ON) ").SetBorderColor(tcell.ColorRed)
 		} else {
-			table.SetTitle(" Time Entries ").
-				SetBorderColor(tcell.ColorWhite)
+			table.SetTitle(" Time Entries ").SetBorderColor(tcell.ColorWhite)
 		}
 	}
 
@@ -91,7 +81,6 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			"[yellow](N)[white] Next Page   [yellow](P)[white] Prev Page   [yellow](Q)[white] Quit")
 	}
 
-	// Show confirmation with a list of entries
 	showEntryListConfirm := func(title, action string, rows map[int]bool, singleRow int, onConfirm func()) {
 		listText := ""
 		if rows != nil && len(rows) > 0 {
@@ -133,7 +122,31 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 		nav.Show(modal)
 	}
 
-	loadData := func(page int) {
+	var loadData func(page int)
+
+	deleteEntries := func(ids []string) {
+		var errs []string
+		for _, id := range ids {
+			if err := ctx.API.DeleteTimeEntry(id); err != nil {
+				errs = append(errs, fmt.Sprintf("Failed to delete %s: %v", id, err))
+			}
+		}
+		if len(errs) > 0 {
+			errorText := strings.Join(errs, "\n")
+			errorModal := tview.NewModal().
+				SetText(fmt.Sprintf("[red]Some deletions failed:\n\n%s", errorText)).
+				AddButtons([]string{"OK"}).
+				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					nav.Show(TimeEntriesScreen(nav, ctx, startDate, endDate))
+				})
+			errorModal.SetTitle("Error").SetBorder(true)
+			nav.Show(errorModal)
+			return
+		}
+		loadData(currentPage)
+	}
+
+	loadData = func(page int) {
 		statsView.Clear()
 		table.Clear()
 		selectedRows = map[int]bool{}
@@ -211,8 +224,7 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 		headers := []string{"Project", "Start", "End", "Duration", "Note", "Reported"}
 		for col, h := range headers {
-			table.SetCell(0, col, tview.NewTableCell(fmt.Sprintf("[yellow]%s", h)).
-				SetSelectable(false))
+			table.SetCell(0, col, tview.NewTableCell(fmt.Sprintf("[yellow]%s", h)).SetSelectable(false))
 		}
 
 		for row, e := range entries {
@@ -267,9 +279,21 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 		case "d":
 			if selectionMode && len(selectedRows) > 0 {
-				showEntryListConfirm("Bulk Delete", "Delete", selectedRows, -1, func() { /* TODO: bulk delete */ })
+				showEntryListConfirm("Bulk Delete", "Delete", selectedRows, -1, func() {
+					ids := []string{}
+					for r := range selectedRows {
+						if r-1 >= 0 && r-1 < len(entriesCache) {
+							ids = append(ids, entriesCache[r-1].ID)
+						}
+					}
+					deleteEntries(ids)
+				})
 			} else if !selectionMode && row > 0 {
-				showEntryListConfirm("Delete Entry", "Delete", nil, row, func() { /* TODO: delete */ })
+				showEntryListConfirm("Delete Entry", "Delete", nil, row, func() {
+					if row-1 >= 0 && row-1 < len(entriesCache) {
+						deleteEntries([]string{entriesCache[row-1].ID})
+					}
+				})
 			}
 		case "r":
 			if selectionMode && len(selectedRows) > 0 {
@@ -287,8 +311,6 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 					})
 				warningModal.SetTitle("Bulk Amend Blocked").SetBorder(true)
 				nav.Show(warningModal)
-			} else {
-				// Single amend does nothing
 			}
 		case "q":
 			nav.Stop()
