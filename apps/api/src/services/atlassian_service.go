@@ -17,9 +17,9 @@ import (
 )
 
 type AtlassianAPIErr struct {
-	Error        string        `json:"error"`
-	ErrorMessage string        `json:"errorMessage"`
-	ErrorMessages []string      `json:"errorMessages"`
+	Error         string   `json:"error"`
+	ErrorMessage  string   `json:"errorMessage"`
+	ErrorMessages []string `json:"errorMessages"`
 }
 
 type AtlassianService struct {

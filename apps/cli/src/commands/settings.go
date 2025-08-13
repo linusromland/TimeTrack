@@ -9,12 +9,12 @@ import (
 )
 
 func getSettingsCommand(ctx *app.AppContext) *cli.Command {
-    return &cli.Command{
-        Name:  "settings",
-        Usage: "Show dashboard and manage settings",
-        Action: func(c *cli.Context) error {
-            nav := ui.NewNavigator()
-            return nav.Run(screens.DashboardScreen(nav, ctx))
-        },
-    }
+	return &cli.Command{
+		Name:  "settings",
+		Usage: "Show dashboard and manage settings",
+		Action: func(c *cli.Context) error {
+			nav := ui.NewNavigator()
+			return nav.Run(screens.DashboardScreen(nav, ctx))
+		},
+	}
 }

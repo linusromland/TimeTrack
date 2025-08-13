@@ -11,7 +11,7 @@ func InitializeDB(db *database.DBWrapper) error {
 		return nil
 	}
 
-	if(db.Get(database.ServerURLKey) == "") {
+	if db.Get(database.ServerURLKey) == "" {
 		// Set the default server URL
 		db.Set(database.ServerURLKey, DefaultServerURL)
 	}

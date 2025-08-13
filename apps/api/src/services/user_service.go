@@ -15,12 +15,12 @@ import (
 )
 
 var userProjection = bson.M{
-	"_id":        1,
-	"email":      1,
-	"firstName":  1,
-	"lastName":   1,
-	"createdAt":  1,
-	"updatedAt":  1,
+	"_id":                           1,
+	"email":                         1,
+	"firstName":                     1,
+	"lastName":                      1,
+	"createdAt":                     1,
+	"updatedAt":                     1,
 	"integration.atlassian.enabled": 1,
 }
 

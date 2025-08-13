@@ -32,7 +32,6 @@ func (a *AppContext) Startup(c *cli.Context) error {
 	if err := config.InitializeDB(a.DB); err != nil {
 		return fmt.Errorf("failed to initialize database: %w", err)
 	}
-	
 
 	a.API = services.NewAPIService(a.DB)
 

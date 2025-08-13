@@ -30,7 +30,7 @@ type TimeEntry struct {
 }
 
 type TimeEntryStatPerDate struct {
-	TimeFrame string `bson:"timeframe" json:"timeframe"`  // ISO 8601 format for the correct time format. (e.g. for day 2025-08-11, month 2025-08, week 2025-W32)
+	TimeFrame string  `bson:"timeframe" json:"timeframe"`   // ISO 8601 format for the correct time format. (e.g. for day 2025-08-11, month 2025-08, week 2025-W32)
 	TotalTime float64 `bson:"total_time" json:"total_time"` // total time in seconds
 }
 

@@ -16,7 +16,7 @@ type AtlassianConfig struct {
 }
 
 type Config struct {
-	APIVersion    	string
+	APIVersion      string
 	MongoURI        string
 	Port            string
 	JWTSecret       string
@@ -33,9 +33,9 @@ func LoadConfig() *Config {
 
 	cfg := &Config{
 		APIVersion: "dev", // Todo: make this be set on build time
-		MongoURI:  os.Getenv("MONGO_URI"),
-		Port:      os.Getenv("PORT"),
-		JWTSecret: os.Getenv("JWT_SECRET"),
+		MongoURI:   os.Getenv("MONGO_URI"),
+		Port:       os.Getenv("PORT"),
+		JWTSecret:  os.Getenv("JWT_SECRET"),
 		AtlassianConfig: AtlassianConfig{
 			Audience:     os.Getenv("ATLASSIAN_AUDIENCE"),
 			ClientId:     os.Getenv("ATLASSIAN_CLIENT_ID"),

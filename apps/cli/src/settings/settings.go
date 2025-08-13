@@ -42,6 +42,7 @@ func (s TextSetting) Set(v string) error { return s.db.Set(s.key, v) }
 func (s TextSetting) Action() func() (string, error) {
 	return nil // No action for text settings
 }
+
 type StaticSetting struct {
 	id       string
 	label    string

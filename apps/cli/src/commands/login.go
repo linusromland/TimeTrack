@@ -9,12 +9,12 @@ import (
 )
 
 func getLoginCommand(ctx *app.AppContext) *cli.Command {
-    return &cli.Command{
-        Name:  "login",
-        Usage: "User login",
-        Action: func(c *cli.Context) error {
-            nav := ui.NewNavigator()
-            return nav.Run(screens.LoginModal(nav, ctx, true))
-        },
-    }
+	return &cli.Command{
+		Name:  "login",
+		Usage: "User login",
+		Action: func(c *cli.Context) error {
+			nav := ui.NewNavigator()
+			return nav.Run(screens.LoginModal(nav, ctx, true))
+		},
+	}
 }

@@ -9,12 +9,12 @@ import (
 )
 
 func getRegisterCommand(ctx *app.AppContext) *cli.Command {
-    return &cli.Command{
-        Name:  "register",
-        Usage: "User registration",
-        Action: func(c *cli.Context) error {
-            nav := ui.NewNavigator()
-            return nav.Run(screens.RegisterModal(nav, ctx, true))
-        },
-    }
+	return &cli.Command{
+		Name:  "register",
+		Usage: "User registration",
+		Action: func(c *cli.Context) error {
+			nav := ui.NewNavigator()
+			return nav.Run(screens.RegisterModal(nav, ctx, true))
+		},
+	}
 }
