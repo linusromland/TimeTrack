@@ -68,6 +68,9 @@ func getListTimeEntriesCommand(ctx *app.AppContext) *cli.Command {
 				startDate = startDate.Add(-dur)
 			}
 
+			startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
+			endDate = time.Date(endDate.Year(), endDate.Month(), endDate.Day(), 23, 59, 59, int(time.Second-time.Nanosecond), endDate.Location())
+
 			nav := ui.NewNavigator()
 			return nav.Run(screens.TimeEntriesScreen(nav, ctx, startDate, endDate))
 		},
