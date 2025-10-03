@@ -15,6 +15,7 @@ type ReportStatus struct {
 	Integration string     `bson:"integration" json:"integration"` // e.g. "jira"
 	ExternalID  string     `bson:"external_id" json:"external_id"` // e.g. "12345" from Jira
 	ReportedAt  *time.Time `bson:"reported_at,omitempty" json:"reported_at,omitempty"`
+	UpdatedAt   *time.Time `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
 }
 
 type TimeEntry struct {
