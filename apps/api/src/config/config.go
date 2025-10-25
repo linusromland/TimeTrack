@@ -32,7 +32,7 @@ func LoadConfig() *Config {
 	}
 
 	cfg := &Config{
-		APIVersion: "dev", // Todo: make this be set on build time
+		APIVersion: "dev",
 		MongoURI:   os.Getenv("MONGO_URI"),
 		Port:       os.Getenv("PORT"),
 		JWTSecret:  os.Getenv("JWT_SECRET"),

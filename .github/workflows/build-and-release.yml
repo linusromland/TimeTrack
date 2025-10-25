@@ -1,0 +1,123 @@
+name: Deploy to GHCR and GitHub Release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.get_version.outputs.new_version }}
+      is_new_version: ${{ steps.get_version.outputs.is_new_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get latest GitHub release tag
+        id: get_latest_release
+        run: |
+          latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ "$latest_release" == "null" ]; then
+            latest_release=""
+          fi
+          echo "latest_release=$latest_release" >> $GITHUB_ENV
+
+      - name: Extract version from changelog
+        id: get_version
+        run: |
+          latest_changelog_version=$(grep -oP '^## \K[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -n 1)
+          echo "Latest version from changelog: $latest_changelog_version"
+
+          latest_github_version="${{ env.latest_release }}"
+          echo "Latest GitHub release version: $latest_github_version"
+
+          if [ "$latest_changelog_version" != "$latest_github_version" ]; then
+            echo "new_version=$latest_changelog_version" >> "$GITHUB_OUTPUT"
+            echo "is_new_version=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_new_version=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-and-release:
+    runs-on: ubuntu-latest
+    needs: check-version
+    if: needs.check-version.outputs.is_new_version == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push API Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./apps/api
+          file: ./apps/api/Dockerfile
+          push: true
+          build-args: |
+            VERSION=${{ needs.check-version.outputs.new_version }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/timetrack-api:latest
+            ghcr.io/${{ github.repository_owner }}/timetrack-api:${{ needs.check-version.outputs.new_version }}
+
+      - name: Build CLI binaries (Linux, Windows, macOS)
+        run: |
+          cd apps/cli
+          mkdir -p dist
+
+          VERSION=${{ needs.check-version.outputs.new_version }}
+
+          echo "Building for Linux..."
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-linux-amd64 .
+
+          echo "Building for Windows..."
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-windows-amd64.exe .
+
+          echo "Building for macOS..."
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-darwin-amd64 .
+
+          cd dist
+          echo "Compressing artifacts..."
+          tar -czf timetrack-cli-linux-amd64.tar.gz timetrack-cli-linux-amd64
+          zip timetrack-cli-windows-amd64.zip timetrack-cli-windows-amd64.exe
+          tar -czf timetrack-cli-darwin-amd64.tar.gz timetrack-cli-darwin-amd64
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-version.outputs.new_version }}
+          name: ${{ needs.check-version.outputs.new_version }}
+          draft: false
+          prerelease: false
+          files: |
+            apps/cli/dist/timetrack-cli-linux-amd64.tar.gz
+            apps/cli/dist/timetrack-cli-windows-amd64.zip
+            apps/cli/dist/timetrack-cli-darwin-amd64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
