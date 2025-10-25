@@ -68,7 +68,11 @@ func (s *AtlassianService) makeAtlassianRequest(method, reqURL string, accessTok
 		log.Printf("Error sending HTTP request to %s: %v", reqURL, err)
 		return errors.New("failed to send HTTP request")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		var apiErr AtlassianAPIErr
@@ -160,7 +164,11 @@ func (s *AtlassianService) HandleOAuthCallback(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send token request"})
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -335,86 +343,86 @@ func (s *AtlassianService) AddTimeEntryToJira(entry *models.TimeEntry, ticketId 
 }
 
 func (s *AtlassianService) UpdateTimeEntryInJira(entry *models.TimeEntry, ticketId string, worklogId string) (string, error) {
-    log.Printf("Updating time entry %s in Jira ticket: %s for owner: %s", worklogId, ticketId, entry.OwnerID)
+	log.Printf("Updating time entry %s in Jira ticket: %s for owner: %s", worklogId, ticketId, entry.OwnerID)
 
-    userId := entry.OwnerID
+	userId := entry.OwnerID
 
-    atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
-    if err != nil {
-        log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
-        return "", err
-    }
-    if !atlassianIntegration.Enabled {
-        return "", errors.New("atlassian integration is not enabled for user: " + userId)
-    }
-    if atlassianIntegration.AccessToken == "" {
-        return "", errors.New("access token is empty for user: " + userId)
-    }
+	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
+	if err != nil {
+		log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
+		return "", err
+	}
+	if !atlassianIntegration.Enabled {
+		return "", errors.New("atlassian integration is not enabled for user: " + userId)
+	}
+	if atlassianIntegration.AccessToken == "" {
+		return "", errors.New("access token is empty for user: " + userId)
+	}
 
-    cloudId, err := s.GetCloudId(userId)
-    if err != nil {
-        log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
-        return "", err
-    }
-    if cloudId == "" {
-        return "", errors.New("could not determine Atlassian cloud ID for user: " + userId)
-    }
-    jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/2/issue/" + ticketId + "/worklog/" + worklogId
+	cloudId, err := s.GetCloudId(userId)
+	if err != nil {
+		log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
+		return "", err
+	}
+	if cloudId == "" {
+		return "", errors.New("could not determine Atlassian cloud ID for user: " + userId)
+	}
+	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/2/issue/" + ticketId + "/worklog/" + worklogId
 
-    reqBody := map[string]interface{}{
-        "comment":          entry.Note,
-        "timeSpentSeconds": entry.Period.Duration,
-    }
+	reqBody := map[string]interface{}{
+		"comment":          entry.Note,
+		"timeSpentSeconds": entry.Period.Duration,
+	}
 
-    var worklogResponse map[string]interface{}
-    err = s.makeAtlassianRequest(http.MethodPut, jiraUrl, atlassianIntegration.AccessToken, reqBody, &worklogResponse)
-    if err != nil {
-        log.Printf("Error updating time entry %s in Jira ticket %s: %v", worklogId, ticketId, err)
-        return "", errors.New("failed to update time entry in Jira: " + err.Error())
-    }
+	var worklogResponse map[string]interface{}
+	err = s.makeAtlassianRequest(http.MethodPut, jiraUrl, atlassianIntegration.AccessToken, reqBody, &worklogResponse)
+	if err != nil {
+		log.Printf("Error updating time entry %s in Jira ticket %s: %v", worklogId, ticketId, err)
+		return "", errors.New("failed to update time entry in Jira: " + err.Error())
+	}
 
-    updatedWorklogId, ok := worklogResponse["id"].(string)
-    if !ok {
-        log.Println("Updated worklog ID not found in response or type assertion failed")
-        return "", errors.New("updated worklog ID not found in Jira response")
-    }
+	updatedWorklogId, ok := worklogResponse["id"].(string)
+	if !ok {
+		log.Println("Updated worklog ID not found in response or type assertion failed")
+		return "", errors.New("updated worklog ID not found in Jira response")
+	}
 
-    log.Printf("Worklog ID %s successfully updated in Jira ticket %s", updatedWorklogId, ticketId)
-    return updatedWorklogId, nil
+	log.Printf("Worklog ID %s successfully updated in Jira ticket %s", updatedWorklogId, ticketId)
+	return updatedWorklogId, nil
 }
 
 func (s *AtlassianService) RemoveTimeEntryFromJira(userId string, ticketId string, worklogId string) error {
-    log.Printf("Removing time entry %s from Jira ticket: %s for owner: %s", worklogId, ticketId, userId)
+	log.Printf("Removing time entry %s from Jira ticket: %s for owner: %s", worklogId, ticketId, userId)
 
-    atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
-    if err != nil {
-        log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
-        return err
-    }
-    if !atlassianIntegration.Enabled {
-        return errors.New("atlassian integration is not enabled for user: " + userId)
-    }
-    if atlassianIntegration.AccessToken == "" {
-        return errors.New("access token is empty for user: " + userId)
-    }
+	atlassianIntegration, err := s.userService.GetAtlassianIntegration(userId)
+	if err != nil {
+		log.Printf("Error fetching Atlassian integration for user %s: %v", userId, err)
+		return err
+	}
+	if !atlassianIntegration.Enabled {
+		return errors.New("atlassian integration is not enabled for user: " + userId)
+	}
+	if atlassianIntegration.AccessToken == "" {
+		return errors.New("access token is empty for user: " + userId)
+	}
 
-    cloudId, err := s.GetCloudId(userId)
-    if err != nil {
-        log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
-        return err
-    }
-    if cloudId == "" {
-        return errors.New("could not determine Atlassian cloud ID for user: " + userId)
-    }
+	cloudId, err := s.GetCloudId(userId)
+	if err != nil {
+		log.Printf("Error fetching cloud ID for user %s: %v", userId, err)
+		return err
+	}
+	if cloudId == "" {
+		return errors.New("could not determine Atlassian cloud ID for user: " + userId)
+	}
 
 	jiraUrl := "https://api.atlassian.com/ex/jira/" + cloudId + "/rest/api/2/issue/" + ticketId + "/worklog/" + worklogId
 
-    err = s.makeAtlassianRequest(http.MethodDelete, jiraUrl, atlassianIntegration.AccessToken, nil, nil)
-    if err != nil {
-        log.Printf("Error removing time entry %s from Jira ticket %s: %v", worklogId, ticketId, err)
-        return errors.New("failed to remove time entry from Jira: " + err.Error())
-    }
+	err = s.makeAtlassianRequest(http.MethodDelete, jiraUrl, atlassianIntegration.AccessToken, nil, nil)
+	if err != nil {
+		log.Printf("Error removing time entry %s from Jira ticket %s: %v", worklogId, ticketId, err)
+		return errors.New("failed to remove time entry from Jira: " + err.Error())
+	}
 
-    log.Printf("Worklog ID %s successfully removed from Jira ticket %s", worklogId, ticketId)
-    return nil
+	log.Printf("Worklog ID %s successfully removed from Jira ticket %s", worklogId, ticketId)
+	return nil
 }
