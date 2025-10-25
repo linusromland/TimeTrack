@@ -1,5 +1,13 @@
 # TimeTrack Changelog
 
+## 0.5.0 (2025-10-25)
+
+- Major architectural overhaul: transitioned from a CLI-centric design to a clean, service-based architecture.
+- Introduced a new internal API built with Go and the Gin web framework. The CLI now communicates with this API for all persistence and business logic.
+- Replaced Google Calendar storage with a MongoDB backend, improving reliability, scalability, and data control.
+- Added automatic time reporting to Jira, enabling better integration and workflow automation.
+- Established a foundation for future web application support using the same API and account system as the CLI.
+
 ## 0.4.0 (2024-01-19)
 
 - Implemented overtime/undertime calculation to `list` command.
