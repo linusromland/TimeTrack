@@ -22,5 +22,8 @@ jobs:
     - name: Install golangci-lint
       run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-    - name: Run golangci-lint
-      run: golangci-lint run ./...
+    - name: Run golangci-lint on api
+      run: cd apps/api && golangci-lint run ./...
+
+    - name: Run golangci-lint on cli
+      run: cd apps/cli && golangci-lint run ./...
