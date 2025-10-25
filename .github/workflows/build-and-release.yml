@@ -93,13 +93,13 @@ jobs:
           VERSION=${{ needs.check-version.outputs.new_version }}
 
           echo "Building for Linux..."
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-linux-amd64 .
+          GOOS=linux GOARCH=amd64 go build -C src -ldflags "-X 'main.version=$VERSION'" -o ../dist/timetrack-cli-linux-amd64 .
 
           echo "Building for Windows..."
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-windows-amd64.exe .
+          GOOS=windows GOARCH=amd64 go build -C src -ldflags "-X 'main.version=$VERSION'" -o ../dist/timetrack-cli-windows-amd64.exe .
 
           echo "Building for macOS..."
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X 'main.version=$VERSION'" -o dist/timetrack-cli-darwin-amd64 .
+          GOOS=darwin GOARCH=amd64 go build -C src -ldflags "-X 'main.version=$VERSION'" -o ../dist/timetrack-cli-darwin-amd64 .
 
           cd dist
           echo "Compressing artifacts..."
