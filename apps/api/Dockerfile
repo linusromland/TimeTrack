@@ -12,7 +12,7 @@ COPY ./apps/api/ ./apps/api/
 
 ARG VERSION=dev
 
-RUN go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./apps/api/cmd/server/main.go
+RUN cd ./apps/api/ && go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./src/main.go
 
 FROM alpine:latest
 
