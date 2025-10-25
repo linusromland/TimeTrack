@@ -108,6 +108,10 @@ func (h *TimeEntryHandler) Update(c *gin.Context) {
 		update["period.duration"] = int(input.Period.End.Sub(input.Period.Start).Seconds())
 	}
 
+	if input.Note != nil {
+		update["note"] = *input.Note
+	}
+
 	if err := h.service.UpdateTimeEntry(c, id, update); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
 		return
