@@ -3,14 +3,16 @@ FROM golang:1.25.1 AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY go.mod go.sum ./apps/api/
+RUN cd ./apps/api/ && go mod download
 
-COPY . .
+COPY . ./apps/api/
+
+COPY ../../shared ./shared
 
 ARG VERSION=dev
 
-RUN go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./src/main.go
+RUN go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./apps/api/cmd/server/main.go
 
 FROM alpine:latest
 
