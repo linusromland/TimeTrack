@@ -1,68 +1,13 @@
 <img src="docs/logo.png"  width="100" height="100" align="center"/>
 
-# TimeTrack CLI
+# TimeTrack
 
-TimeTrack is a Command Line Interface (CLI) application designed for efficient time tracking. With a simple command, you can add and start tasks. Once you're done, TimeTrack automatically syncs your tasks with Google Calendar, offering a visual representation of your time spent on each task.
+TimeTrack is a time tracking tool designed. Originally a CLI-focused tool, it has evolved into a service-based platform built with Go, featuring an internal API, MongoDB for persistence, and Jira integration for automated time reporting.
 
 ## Features
 
 -   **Task Management**: Easily add, start, and stop tasks.
--   **Google Calendar Integration**: Visualize your tasks and time spent using Google Calendar.
 -   **Analytics**: List all tasks to see time spent per task, day, week, month, and more.
-
-## Installation
-
-### Windows:
-
-For Windows users, TimeTrack can be installed using the provided installer found on the [releases page](https://github.com/linusromland/TimeTrack/releases).
-Simply download the latest .exe file and run it to install TimeTrack.
-
-### Other Operating Systems:
-
-Currently, TimeTrack is officially supported on Windows so support for other operating systems is limited. However, TimeTrack can be built from source for other operating systems. But success is not guaranteed.
-
-To build from source follow these steps:
-
-1. Clone the repository:
-
-```bash
-git clone git@github.com:linusromland/TimeTrack.git
-```
-
-2. Create a `.env`
-
-```bash
-cd TimeTrack
-cp .env.example .env
-```
-
-Then fill in the required fields in the `.env` file. For more information on how to get the required credentials, see the [Google Calendar API documentation](https://developers.google.com/calendar/quickstart).
-
-3. Build the project:
-
-```bash
-./cli-build.sh VERSION
-```
-
-Where `VERSION` is the version number you want to build. For example, `./cli-build.sh 1.0.0`.
-
-4. Move the built binary to your PATH:
-
-```bash
-mv ./dist/TimeTrack /usr/local/bin
-```
-
-5. Run TimeTrack:
-
-```bash
-timetrack
-```
-
-That should be it! You should now be able to run TimeTrack from anywhere using the `timetrack` command.
-
-### Update
-
-To update TimeTrack to the latest version, simply re-run the installation command for your respective operating system.
 
 ## Collaborating
 
