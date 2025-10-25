@@ -3,6 +3,7 @@ package apiService
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,7 +24,11 @@ func (api *APIService) GetProjectByName(name string) (*models.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get project by name: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get project by name: %s", resp.Status)
@@ -51,7 +56,11 @@ func (api *APIService) GetProjectByIds(ids []string) ([]models.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get projects by IDs: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get projects by IDs: %s", resp.Status)
@@ -81,7 +90,11 @@ func (api *APIService) CreateProject(project *dtos.CreateProjectInput) (*models.
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("failed to create project: %s", resp.Status)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -20,7 +21,11 @@ func (api *APIService) HealthCheck() (*HealthResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to reach API health endpoint: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("health check returned status %d", resp.StatusCode)

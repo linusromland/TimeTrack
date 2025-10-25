@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"TimeTrack-cli/src/database"
@@ -24,7 +25,11 @@ func (api *APIService) Register(email, password string) error {
 	if err != nil {
 		return fmt.Errorf("failed to register: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("registration failed: %s", resp.Status)
@@ -40,7 +45,11 @@ func (api *APIService) Login(email, password string) error {
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("login failed: %s", resp.Status)
@@ -55,7 +64,10 @@ func (api *APIService) Login(email, password string) error {
 	if response.Token == "" {
 		return errors.New("login response did not contain a token")
 	}
-	api.db.Set(database.AuthTokenKey, response.Token)
+	err = api.db.Set(database.AuthTokenKey, response.Token)
+	if err != nil {
+		return fmt.Errorf("failed to save auth token: %w", err)
+	}
 
 	return nil
 }
@@ -72,7 +84,11 @@ func (api *APIService) GetCurrentUser() (*models.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get current user: %s", resp.Status)

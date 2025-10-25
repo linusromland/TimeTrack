@@ -19,10 +19,10 @@ func DashboardScreen(nav *ui.Navigator, ctx *app.AppContext) tview.Primitive {
 	statusBox.SetBorder(true).SetTitle(" Status ")
 
 	statusBox.Clear()
-	fmt.Fprintf(statusBox, "Server: %s\n", colorStatus(getServerStatus(ctx)))
-	fmt.Fprintf(statusBox, "Server URL: %s\n", colorStatus(getServerURL(ctx)))
-	fmt.Fprintf(statusBox, "User: %s\n", colorStatus(getUserStatus(ctx)))
-	fmt.Fprintf(statusBox, "Atlassian Integration: %s\n", colorStatus(getAtlassianStatus(ctx)))
+	_, _ = fmt.Fprintf(statusBox, "Server: %s\n", colorStatus(getServerStatus(ctx)))
+	_, _ = fmt.Fprintf(statusBox, "Server URL: %s\n", colorStatus(getServerURL(ctx)))
+	_, _ = fmt.Fprintf(statusBox, "User: %s\n", colorStatus(getUserStatus(ctx)))
+	_, _ = fmt.Fprintf(statusBox, "Atlassian Integration: %s\n", colorStatus(getAtlassianStatus(ctx)))
 
 	actions := tview.NewTextView().
 		SetDynamicColors(true).
@@ -30,7 +30,7 @@ func DashboardScreen(nav *ui.Navigator, ctx *app.AppContext) tview.Primitive {
 		SetWrap(false)
 	actions.SetBorder(true).SetTitle(" Actions ")
 
-	fmt.Fprintf(actions, "[yellow](E)[-] Edit Server URL  |  [yellow](L)[-] Login  |  [yellow](R)[-] Register  |  [yellow](A)[-] Atlassian Auth  |  [yellow](Q)[-] Quit")
+	_, _ = fmt.Fprintf(actions, "[yellow](E)[-] Edit Server URL  |  [yellow](L)[-] Login  |  [yellow](R)[-] Register  |  [yellow](A)[-] Atlassian Auth  |  [yellow](Q)[-] Quit")
 
 	// Capture key presses
 	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -86,10 +86,6 @@ func getServerURL(ctx *app.AppContext) string {
 	return ctx.DB.Get(database.ServerURLKey)
 }
 
-func setServerURL(ctx *app.AppContext, value string) {
-	ctx.DB.Set(database.ServerURLKey, value)
-}
-
 func colorStatus(text string) string {
 	switch {
 	case startsWith(text, "Healthy"), startsWith(text, "Logged in"), startsWith(text, "Enabled"):
@@ -111,7 +107,11 @@ func doAtlassianAuth(nav *ui.Navigator, ctx *app.AppContext) {
 		nav.Show(components.StyledModal("Error: "+err.Error(), func() { nav.Show(DashboardScreen(nav, ctx)) }))
 		return
 	}
-	utils.OpenBrowser(url)
+	err = utils.OpenBrowser(url)
+	if err != nil {
+		nav.Show(components.StyledModal("Error: "+err.Error(), func() { nav.Show(DashboardScreen(nav, ctx)) }))
+		return
+	}
 	nav.Show(components.StyledModal("Opened browser for authentication.\nFollow instructions.", func() {
 		nav.Stop()
 	}))

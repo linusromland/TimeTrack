@@ -14,11 +14,15 @@ func EditSettingModal(nav *ui.Navigator, ctx *app.AppContext) tview.Primitive {
 	current := getServerURL(ctx)
 
 	form := components.StyledForm("Edit Server URL")
-	var newValue string = current
+	var newValue = current
 
 	form.AddInputField("Server URL", current, 40, nil, func(text string) { newValue = text })
 	form.AddButton("Save", func() {
-		ctx.DB.Set(database.ServerURLKey, newValue)
+		err := ctx.DB.Set(database.ServerURLKey, newValue)
+		if err != nil {
+			nav.Show(components.StyledModal("Error: "+err.Error(), func() { nav.Show(DashboardScreen(nav, ctx)) }))
+			return
+		}
 		nav.Show(DashboardScreen(nav, ctx))
 	})
 	form.AddButton("Cancel", func() {

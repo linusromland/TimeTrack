@@ -14,7 +14,7 @@ func (api *APIService) GetAtlassianAuthURL() (string, error) {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	resp, err := api.client.Do(req)
+	resp, _ := api.client.Do(req)
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to get Atlassian auth URL, status code: %d", resp.StatusCode)
 	}

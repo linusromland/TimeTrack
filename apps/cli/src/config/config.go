@@ -2,6 +2,7 @@ package config
 
 import (
 	"TimeTrack-cli/src/database"
+	"fmt"
 )
 
 const DefaultServerURL = "https://timetrack.linusromland.com"
@@ -13,7 +14,10 @@ func InitializeDB(db *database.DBWrapper) error {
 
 	if db.Get(database.ServerURLKey) == "" {
 		// Set the default server URL
-		db.Set(database.ServerURLKey, DefaultServerURL)
+		err := db.Set(database.ServerURLKey, DefaultServerURL)
+		if err != nil {
+			return fmt.Errorf("failed to set default server URL: %w", err)
+		}
 	}
 
 	return nil

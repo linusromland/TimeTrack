@@ -3,6 +3,7 @@ package apiService
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"TimeTrack-shared/dtos"
@@ -26,7 +27,11 @@ func (api *APIService) CreateTimeEntry(entry *dtos.CreateTimeEntryInput) (*model
 	if err != nil {
 		return nil, fmt.Errorf("failed to create time entry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("failed to create time entry: %s", resp.Status)
@@ -55,7 +60,11 @@ func (api *APIService) GetTimeEntries(startDate, endDate string, page int) ([]*m
 	if err != nil {
 		return nil, fmt.Errorf("failed to get time entries: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get time entries: %s", resp.Status)
@@ -81,7 +90,11 @@ func (api *APIService) GetTimeEntryStatistics(startDate, endDate string) (*model
 	if err != nil {
 		return nil, fmt.Errorf("failed to get time entries: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get time entries: %s", resp.Status)
@@ -107,7 +120,11 @@ func (api *APIService) DeleteTimeEntry(timeEntryId string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete time entry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			log.Printf("error closing response body: %v", cerr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to delete time entry: %s", resp.Status)

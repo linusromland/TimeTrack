@@ -129,7 +129,10 @@ func GetAllSettings(db *database.DBWrapper) []Setting {
 				if err != nil {
 					return "", err
 				}
-				utils.OpenBrowser(url)
+				err = utils.OpenBrowser(url)
+				if err != nil {
+					return "", err
+				}
 				return "Follow the instructions in your browser to complete authentication.", nil
 			},
 		},

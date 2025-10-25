@@ -83,7 +83,7 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 	showEntryListConfirm := func(title, action string, rows map[int]bool, singleRow int, onConfirm func()) {
 		listText := ""
-		if rows != nil && len(rows) > 0 {
+		if len(rows) > 0 {
 			for r := range rows {
 				if r-1 >= 0 && r-1 < len(entriesCache) {
 					entry := entriesCache[r-1]
@@ -155,7 +155,7 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 
 		stats, err := ctx.API.GetTimeEntryStatistics(startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
 		if err != nil {
-			fmt.Fprintf(statsView, "[red]Error loading stats: %v", err)
+			_, _ = fmt.Fprintf(statsView, "[red]Error loading stats: %v", err)
 			return
 		}
 
@@ -170,31 +170,31 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 		}
 
-		fmt.Fprintf(statsView, "[yellow]Total Entries:[white] %d\n", stats.TotalEntries)
-		fmt.Fprintf(statsView, "[yellow]Total Time:[white] %s\n", prettyDuration(float64(stats.TotalTime)))
+		_, _ = fmt.Fprintf(statsView, "[yellow]Total Entries:[white] %d\n", stats.TotalEntries)
+		_, _ = fmt.Fprintf(statsView, "[yellow]Total Time:[white] %s\n", prettyDuration(float64(stats.TotalTime)))
 
 		sort.Slice(stats.EntriesPerDate, func(i, j int) bool {
 			return stats.EntriesPerDate[i].TimeFrame < stats.EntriesPerDate[j].TimeFrame
 		})
 
-		fmt.Fprintf(statsView, "\n[green]Per Day:[white]\n")
+		_, _ = fmt.Fprintf(statsView, "\n[green]Per Day:[white]\n")
 		if len(stats.EntriesPerDate) == 0 {
-			fmt.Fprintf(statsView, "  [gray](no data)\n")
+			_, _ = fmt.Fprintf(statsView, "  [gray](no data)\n")
 		}
 		for _, d := range stats.EntriesPerDate {
-			fmt.Fprintf(statsView, "  %s: %s\n", d.TimeFrame, prettyDuration(d.TotalTime))
+			_, _ = fmt.Fprintf(statsView, "  %s: %s\n", d.TimeFrame, prettyDuration(d.TotalTime))
 		}
 
-		fmt.Fprintf(statsView, "\n[green]Per Project:[white]\n")
+		_, _ = fmt.Fprintf(statsView, "\n[green]Per Project:[white]\n")
 		if len(stats.EntriesPerProject) == 0 {
-			fmt.Fprintf(statsView, "  [gray](no data)\n")
+			_, _ = fmt.Fprintf(statsView, "  [gray](no data)\n")
 		}
 		for _, p := range stats.EntriesPerProject {
 			name := projectMap[p.ProjectID]
 			if name == "" {
 				name = p.ProjectID
 			}
-			fmt.Fprintf(statsView, "  %s: %s\n", name, prettyDuration(p.TotalTime))
+			_, _ = fmt.Fprintf(statsView, "  %s: %s\n", name, prettyDuration(p.TotalTime))
 		}
 
 		entries, err := ctx.API.GetTimeEntries(startDate.Format(time.RFC3339), endDate.Format(time.RFC3339), page)

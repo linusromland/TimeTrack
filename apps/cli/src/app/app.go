@@ -55,6 +55,9 @@ func (a *AppContext) Startup(c *cli.Context) error {
 
 func (a *AppContext) Shutdown() {
 	if a.DB != nil {
-		a.DB.Close()
+		err := a.DB.Close()
+		if err != nil {
+			fmt.Printf("Warning: failed to close database: %s\n", err)
+		}
 	}
 }
