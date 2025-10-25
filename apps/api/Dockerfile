@@ -4,11 +4,11 @@ FROM golang:1.25.1 AS builder
 WORKDIR /app
 
 COPY ./apps/api/go.mod ./apps/api/go.sum ./apps/api/
+COPY ../../shared ./shared
+
 RUN cd ./apps/api/ && go mod download
 
 COPY ./apps/api/ ./apps/api/
-
-COPY ../../shared ./shared
 
 ARG VERSION=dev
 
