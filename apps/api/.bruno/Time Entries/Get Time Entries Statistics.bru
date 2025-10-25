@@ -1,0 +1,21 @@
+meta {
+  name: Get Time Entries Statistics
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{URL}}/time-entries/statistics?format=w&from=2025-01-01T00:00:00Z&to=2025-02-01T00:00:00Z
+  body: none
+  auth: bearer
+}
+
+params:query {
+  format: w
+  from: 2025-01-01T00:00:00Z
+  to: 2025-02-01T00:00:00Z
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}

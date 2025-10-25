@@ -1,0 +1,29 @@
+meta {
+  name: Amend Time Entry
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{URL}}/time-entries/:timeEntryId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  timeEntryId: b375e2ca-6d25-453a-9d6e-be93ccc91d06
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "project_id": "97c412a6-aa9f-4931-b8cc-45390becde53",
+    "period": {
+      "Start": "2025-01-01T01:00:00Z",
+      "End": "2025-01-01T02:00:00Z"
+    }
+  }
+}

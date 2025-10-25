@@ -1,0 +1,15 @@
+meta {
+  name: Get Time Entries
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{URL}}/time-entries
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}

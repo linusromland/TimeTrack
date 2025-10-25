@@ -1,0 +1,25 @@
+meta {
+  name: Amend Project
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{URL}}/projects/:projectId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  projectId: 97c412a6-aa9f-4931-b8cc-45390becde53
+}
+
+auth:bearer {
+  token: {{jwt_token}}
+}
+
+body:json {
+  {
+    "name": "Amended"
+  }
+}
