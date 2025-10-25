@@ -3,10 +3,10 @@ FROM golang:1.25.1 AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./apps/api/
+COPY ./apps/api/go.mod ./apps/api/go.sum ./apps/api/
 RUN cd ./apps/api/ && go mod download
 
-COPY . ./apps/api/
+COPY ./apps/api/ ./apps/api/
 
 COPY ../../shared ./shared
 
