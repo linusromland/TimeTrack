@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.5.1 (2025-12-18)
+
+- Fixed issue with docker image not starting.
+
 ## 0.5.0 (2025-10-25)
 
 - Major architectural overhaul: transitioned from a CLI-centric design to a clean, service-based architecture.

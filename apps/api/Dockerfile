@@ -14,11 +14,11 @@ ARG VERSION=dev
 
 RUN cd ./apps/api/ && go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./src/main.go
 
-FROM alpine:latest
+FROM ubuntu:24.04
 
 WORKDIR /app
 
-COPY --from=builder /app/apps/api/server .
+COPY --from=builder /app/apps/api/server ./server
 
 EXPOSE 8080
 
