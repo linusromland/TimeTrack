@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.5.2 (2025-12-18)
+
+- Sets GIN_MODE to release and PORT to 8080 in the Dockerfile for the API service.
+
 ## 0.5.1 (2025-12-18)
 
 - Fixed issue with docker image not starting.
