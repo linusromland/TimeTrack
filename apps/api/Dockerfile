@@ -12,7 +12,7 @@ COPY ./apps/api/ ./apps/api/
 
 ARG VERSION=dev
 
-RUN cd ./apps/api/ && go build -ldflags "-X 'TimeTrack-api/src/config.AppConfig.APIVersion=${VERSION}'" -o server ./src/main.go
+RUN cd ./apps/api/ && go build -ldflags "-X 'TimeTrack-api/src/config.Version=${VERSION}'" -o server ./src/main.go
 
 FROM ubuntu:24.04
 

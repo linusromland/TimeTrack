@@ -25,6 +25,9 @@ type Config struct {
 
 var AppConfig *Config
 
+// Version can be set via build flags (-ldflags "-X 'TimeTrack-api/src/config.Version=...'")
+var Version = "dev"
+
 func LoadConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
@@ -32,7 +35,7 @@ func LoadConfig() *Config {
 	}
 
 	cfg := &Config{
-		APIVersion: "dev",
+		APIVersion: Version,
 		MongoURI:   os.Getenv("MONGO_URI"),
 		Port:       os.Getenv("PORT"),
 		JWTSecret:  os.Getenv("JWT_SECRET"),

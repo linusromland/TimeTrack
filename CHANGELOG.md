@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.5.3 (2025-12-18)
+
+- Sets version in the API service using build flags in the Dockerfile.
+
 ## 0.5.2 (2025-12-18)
 
 - Sets GIN_MODE to release and PORT to 8080 in the Dockerfile for the API service.
