@@ -1,6 +1,6 @@
 # TimeTrack Changelog
 
-## [Unreleased]
+## 0.6.0 (2026-01-02)
 
 - Fixed SSL/TLS certificate verification in Docker container for secure external API communication
 - Updated CLI to integrate with new API-centric architecture
