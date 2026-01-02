@@ -1,5 +1,11 @@
 # TimeTrack Changelog
 
+## [Unreleased]
+
+- Fixed SSL/TLS certificate verification in Docker container for secure external API communication
+- Updated CLI to integrate with new API-centric architecture
+- Removed debug logging for cleaner production output
+
 ## 0.5.3 (2025-12-18)
 
 - Sets version in the API service using build flags in the Dockerfile.
