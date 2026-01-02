@@ -109,6 +109,12 @@ install_binary() {
     # Make sure install directory exists
     $SUDO mkdir -p "$INSTALL_DIR"
     
+    # Remove existing binary if it exists
+    if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
+        print_info "Removing existing TimeTrack binary..."
+        $SUDO rm -f "$INSTALL_DIR/$BINARY_NAME"
+    fi
+    
     # Install binary
     $SUDO cp "timetrack-cli-$PLATFORM-$ARCH" "$INSTALL_DIR/$BINARY_NAME"
     $SUDO chmod +x "$INSTALL_DIR/$BINARY_NAME"
@@ -122,15 +128,33 @@ install_binary() {
 # Setup bash completion
 setup_bash_completion() {
     COMPLETION_DIR=""
+    COMPLETION_SUDO=""
+    
+    # Remove existing completions first
+    print_info "Removing any existing bash completions..."
+    
+    # Check common completion directories and remove existing files
+    for dir in "/etc/bash_completion.d" "/usr/local/etc/bash_completion.d" "$HOME/.local/share/bash-completion/completions"; do
+        if [ -f "$dir/timetrack" ]; then
+            if [[ "$dir" == "$HOME"* ]]; then
+                rm -f "$dir/timetrack"
+            else
+                $SUDO rm -f "$dir/timetrack"
+            fi
+            print_info "Removed existing completion from $dir"
+        fi
+    done
     
     # Try different completion directories
     if [ -d "/etc/bash_completion.d" ]; then
         COMPLETION_DIR="/etc/bash_completion.d"
+        COMPLETION_SUDO="$SUDO"
     elif [ -d "/usr/local/etc/bash_completion.d" ]; then
         COMPLETION_DIR="/usr/local/etc/bash_completion.d"
+        COMPLETION_SUDO="$SUDO"
     elif [ -d "$HOME/.local/share/bash-completion/completions" ]; then
         COMPLETION_DIR="$HOME/.local/share/bash-completion/completions"
-        SUDO="" # Don't use sudo for user directory
+        COMPLETION_SUDO="" # Don't use sudo for user directory
     fi
     
     if [ -n "$COMPLETION_DIR" ]; then
@@ -139,23 +163,27 @@ setup_bash_completion() {
         # Generate completion script
         COMPLETION_SCRIPT="# TimeTrack bash completion
 _timetrack_completion() {
-    local cur prev opts
-    COMPREPLY=()
-    cur=\"\${COMP_WORDS[COMP_CWORD]}\"
-    prev=\"\${COMP_WORDS[COMP_CWORD-1]}\"
+    local cur prev words cword
+    _init_completion || return
+
+    # Define available commands
+    local commands=\"add list login register settings dashboard\"
     
-    # Generate completions using the CLI tool
-    if command -v $BINARY_NAME >/dev/null 2>&1; then
-        COMPREPLY=( \$(compgen -W \"\$($BINARY_NAME --generate-bash-completion)\" -- \${cur}) )
+    # If we're completing the first argument (command)
+    if [[ \$cword -eq 1 ]]; then
+        COMPREPLY=(\$(compgen -W \"\$commands\" -- \"\$cur\"))
+        return
     fi
     
-    return 0
+    # For subcommands, we can add more specific completion later
+    # For now, just don't complete anything after the command
+    COMPREPLY=()
 }
 
 complete -F _timetrack_completion timetrack"
         
-        $SUDO mkdir -p "$COMPLETION_DIR"
-        echo "$COMPLETION_SCRIPT" | $SUDO tee "$COMPLETION_DIR/timetrack" >/dev/null
+        $COMPLETION_SUDO mkdir -p "$COMPLETION_DIR"
+        echo "$COMPLETION_SCRIPT" | $COMPLETION_SUDO tee "$COMPLETION_DIR/timetrack" >/dev/null
         
         print_info "Bash completion installed to $COMPLETION_DIR/timetrack"
         print_warn "Restart your shell or run 'source $COMPLETION_DIR/timetrack' to enable completion"
