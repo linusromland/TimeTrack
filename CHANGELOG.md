@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.6.2 (2026-01-02)
+
+- Fix issue with API Docker Image sometimes not starting.
+
 ## 0.6.1 (2026-01-02)
 
 - Fixed multiple vulnerabilities

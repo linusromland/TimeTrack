@@ -14,10 +14,9 @@ ARG VERSION=dev
 
 RUN cd ./apps/api/ && go build -ldflags "-X 'TimeTrack-api/src/config.Version=${VERSION}'" -o server ./src/main.go
 
-FROM alpine:latest
+FROM ubuntu:24.04
 
-# Install CA certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates
 
 WORKDIR /app
 
