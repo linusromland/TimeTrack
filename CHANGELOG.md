@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.6.1 (2026-01-02)
+
+- Fixed multiple vulnerabilities
+
 ## 0.6.0 (2026-01-02)
 
 - Fixed SSL/TLS certificate verification in Docker container for secure external API communication
@@ -8,6 +12,7 @@
 - Changed CLI database storage from `/tmp` to `~/.timetrack/data` for persistent data in production
 - Added one-liner installation script for easy setup on Linux/macOS
 - Enabled bash auto-completion for CLI commands
+- Improved installation script with better bash completion and cleanup of existing installations
 
 ## 0.5.3 (2025-12-18)
 
