@@ -1,6 +1,9 @@
 package database
 
 import (
+	"os"
+	"path/filepath"
+
 	badger "github.com/dgraph-io/badger/v4"
 )
 
@@ -9,7 +12,24 @@ type DBWrapper struct {
 }
 
 func OpenDB() (*DBWrapper, error) {
-	dbPath := "/tmp/badger"
+	var dbPath string
+	
+	// Use /tmp for development, ~/.timetrack for production
+	if os.Getenv("TIMETRACK_ENV") == "development" {
+		dbPath = "/tmp/badger"
+	} else {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		dbPath = filepath.Join(homeDir, ".timetrack", "data")
+		
+		// Create directory if it doesn't exist
+		if err := os.MkdirAll(dbPath, 0755); err != nil {
+			return nil, err
+		}
+	}
+	
 	opts := badger.DefaultOptions(dbPath).WithInMemory(false)
 	opts.Logger = nil
 	db, err := badger.Open(opts)
