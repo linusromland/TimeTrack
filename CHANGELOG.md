@@ -6,6 +6,8 @@
 - Updated CLI to integrate with new API-centric architecture
 - Removed debug logging for cleaner production output
 - Changed CLI database storage from `/tmp` to `~/.timetrack/data` for persistent data in production
+- Added one-liner installation script for easy setup on Linux/macOS
+- Enabled bash auto-completion for CLI commands
 
 ## 0.5.3 (2025-12-18)
 

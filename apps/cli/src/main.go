@@ -15,11 +15,12 @@ func main() {
 	ctx := app.NewAppContext(version)
 
 	appCLI := &cli.App{
-		Name:     "TimeTrack",
-		Usage:    "Easy time tracking from the command line.",
-		Version:  version,
-		Before:   ctx.Startup,
-		Commands: commands.GetAllCommands(ctx),
+		Name:                 "TimeTrack",
+		Usage:                "Easy time tracking from the command line.",
+		Version:              version,
+		Before:               ctx.Startup,
+		Commands:             commands.GetAllCommands(ctx),
+		EnableBashCompletion: true,
 	}
 
 	if err := appCLI.Run(os.Args); err != nil {
