@@ -43,7 +43,27 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User registered"})
+
+	// Generate auth token for immediate login after registration
+	tokenString, err := h.tokenService.GenerateAuthToken(user.ID, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error signing the token"})
+		return
+	}
+
+	// Set httpOnly cookie for security
+	c.SetCookie(
+		"auth_token",                    // name
+		tokenString,                     // value
+		24*60*60,                       // maxAge (24 hours in seconds)
+		"/",                            // path
+		"",                             // domain (empty for current domain)
+		false,                          // secure (set to true in production with HTTPS)
+		true,                           // httpOnly
+	)
+
+	// Return user data (without sensitive info)
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 func (h *UserHandler) LoginUser(c *gin.Context) {
@@ -64,7 +84,20 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error signing the token"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+
+	// Set httpOnly cookie for security
+	c.SetCookie(
+		"auth_token",                    // name
+		tokenString,                     // value
+		24*60*60,                       // maxAge (24 hours in seconds)
+		"/",                            // path
+		"",                             // domain (empty for current domain)
+		false,                          // secure (set to true in production with HTTPS)
+		true,                           // httpOnly
+	)
+
+	// Return user data (without sensitive info)
+	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
 func (h *UserHandler) GetUser(c *gin.Context) {
@@ -75,4 +108,19 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) LogoutUser(c *gin.Context) {
+	// Clear the auth token cookie
+	c.SetCookie(
+		"auth_token",  // name
+		"",           // value (empty to clear)
+		-1,           // maxAge (negative to expire immediately)
+		"/",          // path
+		"",           // domain
+		false,        // secure
+		true,         // httpOnly
+	)
+	
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }

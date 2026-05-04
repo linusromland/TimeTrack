@@ -12,14 +12,22 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
-			c.Abort()
-			return
+		var tokenString string
+		
+		// Try to get token from Authorization header first (for backwards compatibility)
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			tokenString = strings.Replace(authHeader, "Bearer ", "", 1)
+		} else {
+			// Try to get token from httpOnly cookie
+			cookie, err := c.Cookie("auth_token")
+			if err != nil || cookie == "" {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token is required"})
+				c.Abort()
+				return
+			}
+			tokenString = cookie
 		}
-
-		tokenString = strings.Replace(tokenString, "Bearer ", "", 1)
 
 		jwtSecret := os.Getenv("JWT_SECRET")
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

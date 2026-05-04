@@ -1,5 +1,15 @@
 # TimeTrack Changelog
 
+## 0.7.0 (2026-05-04)
+
+- **Major Release**: Added modern React 19 web UI with Material-UI 9
+- Web application provides all CLI features through responsive web interface
+- Integrated web UI serves directly from Go API in production (single binary deployment)
+- Added HTTP-only cookie authentication for enhanced security
+- Implemented comprehensive time tracking interface with charts and statistics
+- Added responsive design supporting mobile, tablet, and desktop devices
+- Supports all existing features: projects, time entries, Jira integration, and statistics
+
 ## 0.6.3 (2026-05-04)
 
 - Fix timezone display issue in CLI - times now correctly display in local timezone instead of UTC.

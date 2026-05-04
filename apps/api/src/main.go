@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -46,6 +49,21 @@ func main() {
 	// Setup Gin router
 	r := gin.Default()
 
+	// Serve static files for React SPA
+	staticPath := "./static"
+	if _, err := os.Stat(staticPath); err == nil {
+		// Serve static assets (CSS, JS, images, etc.)
+		r.Static("/assets", filepath.Join(staticPath, "assets"))
+		
+		// Serve other static files
+		r.StaticFS("/static", http.Dir(staticPath))
+		
+		// Health check and Swagger before SPA fallback
+		r.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		})
+	}
+
 	// Serve Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -54,6 +72,7 @@ func main() {
 	{
 		apiV1.POST("/register", userHandler.RegisterUser)
 		apiV1.POST("/login", userHandler.LoginUser)
+		apiV1.POST("/logout", userHandler.LogoutUser)
 
 		// Health check endpoint
 		apiV1.GET("/health", healthHandler.CheckHealth)
@@ -90,6 +109,24 @@ func main() {
 			authGroup.GET("/time-entries/statistics", timeEntryHandler.Statistics)
 		}
 	}
+
+	// SPA fallback - serve index.html for all non-API routes
+	r.NoRoute(func(c *gin.Context) {
+		// Check if this is an API request
+		if c.Request.URL.Path[:4] == "/api" || c.Request.URL.Path[:8] == "/swagger" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+			return
+		}
+		
+		// Serve React SPA for all other routes
+		staticPath := "./static"
+		indexPath := filepath.Join(staticPath, "index.html")
+		if _, err := os.Stat(indexPath); err == nil {
+			c.File(indexPath)
+		} else {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
+		}
+	})
 
 	// Start server
 	port := cfg.Port
