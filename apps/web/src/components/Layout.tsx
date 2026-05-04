@@ -28,10 +28,12 @@ import {
   Settings as SettingsIcon,
   AccountCircle as AccountIcon,
   Refresh as RefreshIcon,
+  LogoutRounded as LogoutIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
 
-const drawerWidth = 240
+const drawerWidth = 280
 
 const navigationItems = [
   { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
@@ -77,31 +79,79 @@ export const Layout: React.FC = () => {
   }
 
   const drawer = (
-    <Box>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" color="primary">
-          TimeTrack
-        </Typography>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Toolbar sx={{ 
+        px: 3, 
+        py: 3,
+        borderBottom: '1px solid rgba(59, 130, 246, 0.1)'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.3)',
+            }}
+          >
+            <ScheduleIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            TimeTrack
+          </Typography>
+        </Box>
       </Toolbar>
-      <Divider />
-      <List>
-        {navigationItems.map((item) => (
-          <ListItem key={item.path} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => {
-                navigate(item.path)
-                if (isMobile) {
-                  setMobileOpen(false)
-                }
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      
+      <Box sx={{ flex: 1, px: 2, py: 1 }}>
+        <List sx={{ '& .MuiListItem-root': { px: 0 } }}>
+          {navigationItems.map((item) => (
+            <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                selected={location.pathname === item.path}
+                onClick={() => {
+                  navigate(item.path)
+                  if (isMobile) {
+                    setMobileOpen(false)
+                  }
+                }}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  borderRadius: '12px',
+                  mx: 1,
+                }}
+              >
+                <ListItemIcon sx={{ 
+                  color: location.pathname === item.path ? '#3B82F6' : '#94A3B8',
+                  minWidth: 44,
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.label} 
+                  primaryTypographyProps={{
+                    fontWeight: location.pathname === item.path ? 600 : 500,
+                    color: location.pathname === item.path ? '#F8FAFC' : '#CBD5E1',
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
     </Box>
   )
 
@@ -109,31 +159,43 @@ export const Layout: React.FC = () => {
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
+        elevation={0}
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ px: 3, py: 1 }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ 
+              mr: 2, 
+              display: { md: 'none' },
+              background: 'rgba(59, 130, 246, 0.1)',
+              backdropFilter: 'blur(10px)',
+              '&:hover': {
+                background: 'rgba(59, 130, 246, 0.2)',
+              }
+            }}
           >
             <MenuIcon />
           </IconButton>
           
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h5" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
             {navigationItems.find(item => item.path === location.pathname)?.label || 'TimeTrack'}
           </Typography>
 
           <Button
-            color="inherit"
+            variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={handleRefresh}
-            sx={{ mr: 2 }}
+            sx={{ 
+              mr: 2,
+              borderRadius: '10px',
+            }}
           >
             Refresh
           </Button>
@@ -144,9 +206,21 @@ export const Layout: React.FC = () => {
             aria-controls="account-menu"
             aria-haspopup="true"
             onClick={handleMenuClick}
-            color="inherit"
+            sx={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              backdropFilter: 'blur(10px)',
+              '&:hover': {
+                background: 'rgba(59, 130, 246, 0.2)',
+              }
+            }}
           >
-            <Avatar sx={{ width: 32, height: 32 }}>
+            <Avatar 
+              sx={{ 
+                width: 32, 
+                height: 32,
+                background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+              }}
+            >
               <AccountIcon />
             </Avatar>
           </IconButton>
@@ -161,36 +235,42 @@ export const Layout: React.FC = () => {
               elevation: 0,
               sx: {
                 overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                background: theme.glassMorphism.background,
+                backdropFilter: theme.glassMorphism.backdropFilter,
+                border: theme.glassMorphism.border,
+                borderRadius: '12px',
                 mt: 1.5,
-                '& .MuiAvatar-root': {
-                  width: 32,
-                  height: 32,
-                  ml: -0.5,
-                  mr: 1,
+                minWidth: 200,
+                '& .MuiMenuItem-root': {
+                  borderRadius: '8px',
+                  mx: 1,
+                  my: 0.5,
+                  '&:hover': {
+                    background: 'rgba(59, 130, 246, 0.1)',
+                  },
                 },
               },
             }}
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
-            <MenuItem disabled>
-              <Typography variant="body2" color="text.secondary">
+            <MenuItem disabled sx={{ opacity: 1 }}>
+              <Typography variant="body2" sx={{ color: '#94A3B8', fontWeight: 500 }}>
                 {user?.email}
               </Typography>
             </MenuItem>
-            <Divider />
+            <Divider sx={{ my: 1, borderColor: 'rgba(59, 130, 246, 0.1)' }} />
             <MenuItem onClick={() => navigate('/settings')}>
               <ListItemIcon>
-                <SettingsIcon fontSize="small" />
+                <SettingsIcon fontSize="small" sx={{ color: '#CBD5E1' }} />
               </ListItemIcon>
-              Settings
+              <Typography sx={{ color: '#F8FAFC' }}>Settings</Typography>
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
-                <AccountIcon fontSize="small" />
+                <LogoutIcon fontSize="small" sx={{ color: '#EF4444' }} />
               </ListItemIcon>
-              Logout
+              <Typography sx={{ color: '#EF4444' }}>Logout</Typography>
             </MenuItem>
           </Menu>
         </Toolbar>
@@ -206,13 +286,13 @@ export const Layout: React.FC = () => {
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': { 
               boxSizing: 'border-box', 
-              width: drawerWidth 
+              width: drawerWidth,
             },
           }}
         >
@@ -224,7 +304,7 @@ export const Layout: React.FC = () => {
             display: { xs: 'none', md: 'block' },
             '& .MuiDrawer-paper': { 
               boxSizing: 'border-box', 
-              width: drawerWidth 
+              width: drawerWidth,
             },
           }}
           open
@@ -239,6 +319,7 @@ export const Layout: React.FC = () => {
           flexGrow: 1,
           p: 3,
           width: { md: `calc(100% - ${drawerWidth}px)` },
+          minHeight: '100vh',
         }}
       >
         <Toolbar />

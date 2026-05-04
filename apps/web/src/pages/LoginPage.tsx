@@ -9,7 +9,13 @@ import {
   Alert,
   CircularProgress,
   Container,
+  Avatar,
+  useTheme,
 } from '@mui/material'
+import {
+  Schedule as ScheduleIcon,
+  LoginRounded as LoginIcon,
+} from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
 import { ApiError } from '@/services/api'
 
@@ -17,6 +23,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, isLoading } = useAuth()
+  const theme = useTheme()
 
   const [formData, setFormData] = useState({
     email: '',

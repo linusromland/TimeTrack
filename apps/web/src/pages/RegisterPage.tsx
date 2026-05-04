@@ -9,13 +9,20 @@ import {
   Alert,
   CircularProgress,
   Container,
+  Avatar,
+  useTheme,
 } from '@mui/material'
+import {
+  Schedule as ScheduleIcon,
+  PersonAddRounded as RegisterIcon,
+} from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
 import { ApiError } from '@/services/api'
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
   const { register, isLoading } = useAuth()
+  const theme = useTheme()
 
   const [formData, setFormData] = useState({
     email: '',
@@ -64,35 +71,78 @@ export const RegisterPage: React.FC = () => {
   }
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%)',
+        backgroundAttachment: 'fixed',
+        px: 2,
+      }}
+    >
+      <Container component="main" maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            padding: 4,
+            padding: { xs: 4, sm: 6 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: '100%',
+            background: theme.glassMorphism.background,
+            backdropFilter: theme.glassMorphism.backdropFilter,
+            border: theme.glassMorphism.border,
+            borderRadius: '24px',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
           }}
         >
-          <Typography component="h1" variant="h4" sx={{ mb: 3 }}>
-            TimeTrack
-          </Typography>
-          <Typography component="h2" variant="h5" sx={{ mb: 3 }}>
-            Sign Up
-          </Typography>
+          {/* Logo and Title */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 4 }}>
+            <Avatar
+              sx={{
+                width: 56,
+                height: 56,
+                background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+                boxShadow: '0 8px 32px rgba(59, 130, 246, 0.3)',
+              }}
+            >
+              <ScheduleIcon sx={{ fontSize: 32 }} />
+            </Avatar>
+            <Box>
+              <Typography 
+                variant="h4" 
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                TimeTrack
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                Create your account to get started.
+              </Typography>
+            </Box>
+          </Box>
 
           {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                width: '100%', 
+                mb: 3,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '12px',
+                color: '#F87171',
+                '& .MuiAlert-icon': {
+                  color: '#EF4444',
+                },
+              }}
+            >
               {error}
             </Alert>
           )}
@@ -110,6 +160,7 @@ export const RegisterPage: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               disabled={isLoading}
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="normal"
@@ -123,6 +174,7 @@ export const RegisterPage: React.FC = () => {
               value={formData.password}
               onChange={handleChange}
               disabled={isLoading}
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="normal"
@@ -135,29 +187,48 @@ export const RegisterPage: React.FC = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               disabled={isLoading}
+              sx={{ mb: 3 }}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
               disabled={isLoading}
+              startIcon={!isLoading && <RegisterIcon />}
+              sx={{ 
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                mb: 3,
+              }}
             >
-              {isLoading ? <CircularProgress size={24} /> : 'Sign Up'}
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
             </Button>
-            <Box textAlign="center">
-              <Typography variant="body2">
+            
+            <Box 
+              sx={{ 
+                textAlign: 'center',
+                pt: 2,
+                borderTop: '1px solid rgba(59, 130, 246, 0.1)',
+              }}
+            >
+              <Typography variant="body2" sx={{ color: '#94A3B8' }}>
                 Already have an account?{' '}
-                <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <Button variant="text" size="small">
-                    Sign In
-                  </Button>
+                <Link 
+                  to="/login" 
+                  style={{ 
+                    textDecoration: 'none',
+                    color: '#3B82F6',
+                    fontWeight: 600,
+                  }}
+                >
+                  Sign in here
                 </Link>
               </Typography>
             </Box>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   )
 }
