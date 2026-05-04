@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   Box,
   Typography,
@@ -6,6 +6,8 @@ import {
   Card,
   CardContent,
   Avatar,
+  CircularProgress,
+  Alert,
   useTheme,
 } from '@mui/material'
 import {
@@ -15,6 +17,7 @@ import {
 } from '@mui/icons-material'
 import { LineChart } from '@mui/x-charts/LineChart'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTimeEntryStatistics } from '@/hooks/api'
 
 const StatCard = ({ 
   title, 
@@ -93,6 +96,68 @@ export const DashboardPage: React.FC = () => {
 
   const userName = user?.email?.split('@')[0] || 'User'
 
+  // Get current date ranges
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
+  
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - today.getDay()) // Start of current week (Sunday)
+  const weekStartStr = weekStart.toISOString().split('T')[0]
+
+  // Fetch today's statistics
+  const { 
+    data: todayStats, 
+    isLoading: todayLoading, 
+    error: todayError 
+  } = useTimeEntryStatistics({
+    from: todayStr,
+    to: todayStr,
+    format: 'd'
+  })
+
+  // Fetch this week's statistics  
+  const { 
+    data: weekStats, 
+    isLoading: weekLoading, 
+    error: weekError 
+  } = useTimeEntryStatistics({
+    from: weekStartStr,
+    to: todayStr,
+    format: 'd'
+  })
+
+  // Calculate display values
+  const { todayTime, weekTime, chartData } = useMemo(() => {
+    const todayTime = todayStats?.total_time || 0
+    const weekTime = weekStats?.total_time || 0
+    
+    // Prepare chart data
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const chartData = daysOfWeek.map((day, index) => {
+      const date = new Date(weekStart)
+      date.setDate(weekStart.getDate() + index)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      const dayData = weekStats?.entries_per_date?.find(
+        entry => entry.timeframe === dateStr
+      )
+      
+      return dayData ? Math.round((dayData.total_time / 3600) * 10) / 10 : 0 // Convert seconds to hours
+    })
+
+    return {
+      todayTime: Math.round((todayTime / 3600) * 10) / 10, // Convert seconds to hours
+      weekTime: Math.round((weekTime / 3600) * 10) / 10,
+      chartData
+    }
+  }, [todayStats, weekStats, weekStart])
+
+  const formatTime = (hours: number): string => {
+    const h = Math.floor(hours)
+    const m = Math.round((hours - h) * 60)
+    return `${h}h ${m}m`
+  }
+
   return (
     <Box>
       {/* Welcome Header */}
@@ -117,8 +182,8 @@ export const DashboardPage: React.FC = () => {
         <Grid item xs={12} sm={6}>
           <StatCard
             title="Today's Time"
-            value="4h 32m"
-            change="+2h 15m"
+            value={todayLoading ? '...' : formatTime(todayTime)}
+            change={todayError ? undefined : "+0h 0m"}
             icon={<ScheduleIcon />}
             color="#3B82F6"
             gradient="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)"
@@ -127,8 +192,8 @@ export const DashboardPage: React.FC = () => {
         <Grid item xs={12} sm={6}>
           <StatCard
             title="This Week"
-            value="28h 45m"
-            change="+8h 20m"
+            value={weekLoading ? '...' : formatTime(weekTime)}
+            change={weekError ? undefined : "+0h 0m"}
             icon={<AssessmentIcon />}
             color="#10B981"
             gradient="linear-gradient(135deg, #10B981 0%, #34D399 100%)"
@@ -137,6 +202,23 @@ export const DashboardPage: React.FC = () => {
       </Grid>
 
       <Grid container spacing={3}>
+        {/* Error Display */}
+        {(todayError || weekError) && (
+          <Grid item xs={12}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 2,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                color: '#F87171',
+              }}
+            >
+              Failed to load time tracking data. Please check your connection.
+            </Alert>
+          </Grid>
+        )}
+
         {/* Weekly Time Tracking Chart */}
         <Grid item xs={12}>
           <Card sx={{ height: 400 }}>
@@ -144,35 +226,48 @@ export const DashboardPage: React.FC = () => {
               <Typography variant="h6" sx={{ mb: 3, color: '#F8FAFC', fontWeight: 600 }}>
                 Weekly Time Overview
               </Typography>
-              <Box sx={{ height: 300, width: '100%' }}>
-                <LineChart
-                  xAxis={[{
-                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    scaleType: 'point',
-                  }]}
-                  series={[{
-                    data: [8.2, 6.5, 7.8, 9.1, 8.9, 4.2, 2.1],
-                    label: 'Hours Worked',
-                    color: '#3B82F6',
-                  }]}
-                  width={undefined}
-                  height={300}
-                  sx={{
-                    '& .MuiChartsAxis-line': {
-                      stroke: '#475569',
-                    },
-                    '& .MuiChartsAxis-tick': {
-                      stroke: '#475569',
-                    },
-                    '& .MuiChartsAxis-tickLabel': {
-                      fill: '#94A3B8',
-                    },
-                    '& .MuiChartsLegend-label': {
-                      fill: '#F8FAFC',
-                    },
+              {weekLoading ? (
+                <Box 
+                  sx={{ 
+                    height: 300, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
                   }}
-                />
-              </Box>
+                >
+                  <CircularProgress sx={{ color: '#3B82F6' }} />
+                </Box>
+              ) : (
+                <Box sx={{ height: 300, width: '100%' }}>
+                  <LineChart
+                    xAxis={[{
+                      data: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                      scaleType: 'point',
+                    }]}
+                    series={[{
+                      data: chartData,
+                      label: 'Hours Worked',
+                      color: '#3B82F6',
+                    }]}
+                    width={undefined}
+                    height={300}
+                    sx={{
+                      '& .MuiChartsAxis-line': {
+                        stroke: '#475569',
+                      },
+                      '& .MuiChartsAxis-tick': {
+                        stroke: '#475569',
+                      },
+                      '& .MuiChartsAxis-tickLabel': {
+                        fill: '#94A3B8',
+                      },
+                      '& .MuiChartsLegend-label': {
+                        fill: '#F8FAFC',
+                      },
+                    }}
+                  />
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
