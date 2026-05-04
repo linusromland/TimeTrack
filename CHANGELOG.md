@@ -1,6 +1,6 @@
 # TimeTrack Changelog
 
-## 0.6.3 (2026-01-02)
+## 0.6.3 (2026-05-04)
 
 - Fix timezone display issue in CLI - times now correctly display in local timezone instead of UTC.
 
