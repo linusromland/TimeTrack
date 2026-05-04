@@ -1,7 +1,10 @@
 package main
 
 import (
+	"io/fs"
 	"log"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -14,6 +17,7 @@ import (
 	"TimeTrack-api/src/handlers"
 	"TimeTrack-api/src/middleware"
 	"TimeTrack-api/src/services"
+	"TimeTrack-api/src/web"
 )
 
 // @title TimeTrack API
@@ -48,6 +52,28 @@ func main() {
 
 	// Serve Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// Serve the embedded web UI for all non-API routes (SPA support).
+	// API routes defined below take precedence.
+	webDist, err := fs.Sub(web.StaticFiles, "dist")
+	if err != nil {
+		log.Fatalf("Failed to access embedded web assets: %v", err)
+	}
+	webFileServer := http.FileServer(http.FS(webDist))
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		// Let API and Swagger routes fall through to a proper 404 JSON response.
+		if strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/swagger/") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		// Try to serve the static asset; fall back to index.html for SPA routing.
+		_, assetErr := webDist.Open(strings.TrimPrefix(path, "/"))
+		if assetErr != nil {
+			c.Request.URL.Path = "/"
+		}
+		webFileServer.ServeHTTP(c.Writer, c.Request)
+	})
 
 	// Versioned API path `/api/v1`
 	apiV1 := r.Group("/api/v1")

@@ -1,4 +1,15 @@
-# --- BUILD STAGE ---
+# --- WEB BUILD STAGE ---
+FROM node:22-alpine AS web-builder
+
+WORKDIR /app/apps/web
+
+COPY ./apps/web/package.json ./apps/web/package-lock.json ./
+RUN npm ci --ignore-scripts
+
+COPY ./apps/web/ ./
+RUN npm run build
+
+# --- API BUILD STAGE ---
 FROM golang:1.25.1 AS builder
 
 WORKDIR /app
@@ -9,6 +20,9 @@ COPY ../../shared ./shared
 RUN cd ./apps/api/ && go mod download
 
 COPY ./apps/api/ ./apps/api/
+
+# Copy the built web UI assets so they are embedded into the Go binary
+COPY --from=web-builder /app/apps/web/dist ./apps/api/src/web/dist
 
 ARG VERSION=dev
 
