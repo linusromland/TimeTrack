@@ -1,5 +1,9 @@
 # TimeTrack Changelog
 
+## 0.6.3 (2026-01-02)
+
+- Fix timezone display issue in CLI - times now correctly display in local timezone instead of UTC.
+
 ## 0.6.2 (2026-01-02)
 
 - Fix issue with API Docker Image sometimes not starting.

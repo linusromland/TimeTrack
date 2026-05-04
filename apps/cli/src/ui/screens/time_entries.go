@@ -105,8 +105,8 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			}
 			listText += fmt.Sprintf("• %s (%s - %s)\n",
 				project,
-				entry.Period.Started.Format("2006-01-02 15:04"),
-				entry.Period.Ended.Format("15:04"))
+				entry.Period.Started.Local().Format("2006-01-02 15:04"),
+				entry.Period.Ended.Local().Format("15:04"))
 		}
 
 		modal := tview.NewModal().
@@ -232,12 +232,12 @@ func TimeEntriesScreen(nav *ui.Navigator, ctx *app.AppContext, startDate, endDat
 			if project == "" {
 				project = e.ProjectID
 			}
-			start := e.Period.Started.Format("2006-01-02 15:04")
-			end := e.Period.Ended.Format("2006-01-02 15:04")
+			start := e.Period.Started.Local().Format("2006-01-02 15:04")
+			end := e.Period.Ended.Local().Format("2006-01-02 15:04")
 			duration := prettyDuration(e.Period.Ended.Sub(e.Period.Started).Seconds())
 			reported := "[red]No"
 			if e.Reported != nil && e.Reported.ReportedAt != nil {
-				reported = fmt.Sprintf("[green]Yes (%s)", e.Reported.ReportedAt.Format("2006-01-02"))
+				reported = fmt.Sprintf("[green]Yes (%s)", e.Reported.ReportedAt.Local().Format("2006-01-02"))
 			}
 
 			values := []string{project, start, end, duration, e.Note, reported}
