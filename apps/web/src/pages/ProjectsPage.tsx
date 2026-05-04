@@ -35,6 +35,7 @@ import {
   useDeleteProject,
 } from '@/hooks/api'
 import type { Project } from '@/types'
+import { formatDateDisplay } from '@/utils/dateUtils'
 
 interface ProjectFormData {
   name: string
@@ -54,7 +55,7 @@ export const ProjectsPage: React.FC = () => {
   const deleteProject = useDeleteProject()
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+    return formatDateDisplay(dateString)
   }
 
   const getIntegrationType = (project: Project) => {

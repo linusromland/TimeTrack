@@ -18,6 +18,7 @@ import {
 import { LineChart } from '@mui/x-charts/LineChart'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTimeEntryStatistics } from '@/hooks/api'
+import { formatDate, formatDuration } from '@/utils/dateUtils'
 
 const StatCard = ({ 
   title, 
@@ -98,11 +99,11 @@ export const DashboardPage: React.FC = () => {
 
   // Get current date ranges
   const today = new Date()
-  const todayStr = today.toISOString().split('T')[0]
+  const todayStr = formatDate(today)
   
   const weekStart = new Date(today)
   weekStart.setDate(today.getDate() - today.getDay()) // Start of current week (Sunday)
-  const weekStartStr = weekStart.toISOString().split('T')[0]
+  const weekStartStr = formatDate(weekStart)
 
   // Fetch today's statistics
   const { 
@@ -136,7 +137,7 @@ export const DashboardPage: React.FC = () => {
     const chartData = daysOfWeek.map((day, index) => {
       const date = new Date(weekStart)
       date.setDate(weekStart.getDate() + index)
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatDate(date)
       
       const dayData = weekStats?.entries_per_date?.find(
         entry => entry.timeframe === dateStr
@@ -153,9 +154,8 @@ export const DashboardPage: React.FC = () => {
   }, [todayStats, weekStats, weekStart])
 
   const formatTime = (hours: number): string => {
-    const h = Math.floor(hours)
-    const m = Math.round((hours - h) * 60)
-    return `${h}h ${m}m`
+    const totalSeconds = Math.round(hours * 3600)
+    return formatDuration(totalSeconds)
   }
 
   return (
